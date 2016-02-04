@@ -8,10 +8,10 @@ An exercise in github and markdown
 This is **bold**
 Here are some *italics*
 ***
-#New paragraph
+
 Numbered list
-1. item 1
-2. item 2
+1 item 1
+2 item 2
 
 Bulleted list
 * item 1 __with bold__
@@ -20,20 +20,20 @@ Bulleted list
 A link to [google](www.google.com)
 
 An equation:
-$ E = mc^{2} $
+$$ E = mc^{2} $$
 
 Code inline:
 'r Sys.Date() '
 
+Code 
 ```{r}
 #some code
 ```
 #Some git commands
-*git diff 939d..235f6 >what has changed?
-*git checkout 0145d >rollback
+*git diff 939d..235f6 -what has changed?
+*git checkout 0145d -rollback
 *git rebase ...go back in time as if never happened
-
-*git bisect >pick point between good and bad 
+*git bisect -pick point between good and bad 
 *commit - figure out which one was first bad
 
 #Some useful markdown tricks in with Rmarkdown
