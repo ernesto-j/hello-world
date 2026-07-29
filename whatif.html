@@ -177,7 +177,7 @@
 
 <header>
   <h1>ScreenFixed valuation sandbox</h1>
-  <span class="sub">Monte Carlo (10,000 runs, live) · SDE × multiple · every slider is a range, not a point</span>
+  <span class="sub">Monte Carlo (20,000 runs, live) · SDE × multiple · every slider is a range, not a point</span>
 </header>
 
 <div class="layout">
@@ -313,7 +313,7 @@ const PRESETS = {
 };
 
 let P = structuredClone(DEFAULTS);
-const RUNS = 10000;
+const RUNS = 20000;
 
 /* ============================ rng & samplers ============================ */
 function mulberry32(seed) {
@@ -343,7 +343,8 @@ function normal(rng) {
   while (v === 0) v = rng();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
-function gammaSample(rng, alpha) { // Marsaglia–Tsang, alpha >= 1 in our use
+function gammaSample(rng, alpha) { // Marsaglia–Tsang; alpha < 1 via Ahrens-Dieter boost
+  if (alpha < 1) return gammaSample(rng, alpha + 1) * Math.pow(rng() || 1e-12, 1 / alpha);
   const d = alpha - 1 / 3, c = 1 / Math.sqrt(9 * d);
   for (;;) {
     let x, v;
@@ -355,7 +356,7 @@ function gammaSample(rng, alpha) { // Marsaglia–Tsang, alpha >= 1 in our use
   }
 }
 function dirichlet(rng, alphas) {
-  const g = alphas.map(a => gammaSample(rng, Math.max(a, 1)));
+  const g = alphas.map(a => gammaSample(rng, a));
   const s = g.reduce((x, y) => x + y, 0);
   return g.map(x => x / s);
 }
@@ -455,7 +456,7 @@ function tornado() {
   const rng = mulberry32(7);
   const draws = [];
   for (let i = 0; i < 4000; i++) {
-    const g1 = gammaSample(rng, Math.max(aPrem, 1)), g2 = gammaSample(rng, Math.max(conc - aPrem, 1));
+    const g1 = gammaSample(rng, aPrem), g2 = gammaSample(rng, conc - aPrem);
     draws.push(g1 / (g1 + g2));
   }
   draws.sort((a, b) => a - b);
@@ -617,29 +618,49 @@ function setupCanvas(canvas) {
   return { ctx, w, h };
 }
 
+function barPath(ctx, bx, by, bw, bh) { // roundRect with fallback for older browsers
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, [3, 3, 0, 0]);
+  else ctx.rect(bx, by, bw, bh);
+  ctx.fill();
+}
+function haloText(ctx, surface, text, tx, ty) { // legible over bars/washes in both themes
+  ctx.save();
+  ctx.strokeStyle = surface; ctx.lineWidth = 3; ctx.lineJoin = "round";
+  ctx.strokeText(text, tx, ty);
+  ctx.restore();
+  ctx.fillText(text, tx, ty);
+}
 function drawHist(canvas, data, band, bandLabel, stash) {
   const { ctx, w, h } = setupCanvas(canvas);
-  const ink2 = cssVar("--ink-2"), muted = cssVar("--muted"), grid = cssVar("--grid"),
+  const ink2 = cssVar("--ink-2"), muted = cssVar("--muted"),
         blue = cssVar("--blue"), orangeWash = cssVar("--orange-wash"), orange = cssVar("--orange"),
-        baseline = cssVar("--baseline");
-  const sorted = Float64Array.from(data).sort();
+        baseline = cssVar("--baseline"), surface = cssVar("--surface");
+  const clean = Float64Array.from(data).filter(Number.isFinite);
+  if (!clean.length) return;
+  const sorted = Float64Array.from(clean).sort();
   const q = p => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
   const lo = q(0.005), hi = q(0.995);
-  const bins = 56, counts = new Array(bins).fill(0), bw = (hi - lo) / bins || 1;
-  for (const v of data) {
+  const bins = 44, counts = new Array(bins).fill(0), bw = (hi - lo) / bins || 1;
+  for (const v of clean) {
     const b = Math.floor((v - lo) / bw);
     if (b >= 0 && b < bins) counts[b]++;
   }
-  const maxC = Math.max(...counts);
+  const maxC = Math.max(...counts) || 1;
   const mL = 8, mR = 8, mT = 18, mB = 22;
   const pw = w - mL - mR, ph = h - mT - mB;
   const x = v => mL + (v - lo) / (hi - lo) * pw;
 
   ctx.clearRect(0, 0, w, h);
+  ctx.font = "10.5px system-ui, sans-serif";
+  let bandRect = null;
   if (band) {
-    ctx.fillStyle = orangeWash;
     const bx0 = Math.max(x(band[0]), mL), bx1 = Math.min(x(band[1]), w - mR);
-    if (bx1 > bx0) ctx.fillRect(bx0, mT, bx1 - bx0, ph);
+    if (bx1 > bx0) {
+      bandRect = [bx0, bx1];
+      ctx.fillStyle = orangeWash;
+      ctx.fillRect(bx0, mT, bx1 - bx0, ph);
+    }
   }
   ctx.fillStyle = blue;
   const barW = pw / bins;
@@ -647,38 +668,40 @@ function drawHist(canvas, data, band, bandLabel, stash) {
   for (let i = 0; i < bins; i++) {
     const bh = counts[i] / maxC * ph;
     const bx = mL + i * barW, by = mT + ph - bh;
-    if (counts[i] > 0) {
-      ctx.beginPath();
-      ctx.roundRect(bx + 0.5, by, Math.max(barW - 1.5, 1), bh, [3, 3, 0, 0]);
-      ctx.fill();
-    }
+    if (counts[i] > 0) barPath(ctx, bx + 0.5, by, Math.max(barW - 1.5, 1), bh);
     bars.push({ x0: bx, x1: bx + barW, lo: lo + i * bw, hi: lo + (i + 1) * bw, n: counts[i] });
   }
   // baseline
   ctx.strokeStyle = baseline; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(mL, mT + ph + 0.5); ctx.lineTo(w - mR, mT + ph + 0.5); ctx.stroke();
-  // percentile lines
-  ctx.font = "10.5px system-ui, sans-serif";
+  // band label: pinned just under the top edge of the band, haloed, kept inside the plot
+  if (bandRect && bandLabel) {
+    ctx.fillStyle = orange;
+    const tw = ctx.measureText(bandLabel).width;
+    const tx = Math.max(Math.min(bandRect[0] + 4, w - mR - tw - 4), mL + 4);
+    haloText(ctx, surface, bandLabel, tx, mT + 11);
+  }
+  // percentile lines, labels clamped inside the canvas and haloed
   for (const [p, lab] of [[0.10, "p10"], [0.50, "p50"], [0.90, "p90"]]) {
     const v = q(p), px = x(v);
     ctx.strokeStyle = ink2; ctx.setLineDash([4, 3]);
     ctx.beginPath(); ctx.moveTo(px, mT); ctx.lineTo(px, mT + ph); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = ink2;
-    ctx.fillText(`${lab} ${fmtK(v)}`, Math.min(px + 3, w - 70), mT - 6 + (p === 0.5 ? 11 : 0));
+    const text = `${lab} ${fmtK(v)}`;
+    const tw = ctx.measureText(text).width;
+    const tx = Math.max(Math.min(px + 3, w - mR - tw - 2), mL + 2);
+    haloText(ctx, surface, text, tx, mT - 6 + (p === 0.5 ? 11 : 0));
   }
-  if (band && bandLabel) {
-    ctx.fillStyle = orange;
-    ctx.fillText(bandLabel, Math.max(x(band[0]) + 3, mL + 3), mT + ph - 6);
-  }
-  // x ticks
+  // x ticks, clamped so the first/last labels never clip
   ctx.fillStyle = muted;
   for (let i = 0; i <= 4; i++) {
     const v = lo + (hi - lo) * i / 4;
-    ctx.fillText(fmtK(v), x(v) - 14, h - 6);
+    const text = fmtK(v), tw = ctx.measureText(text).width;
+    const tx = Math.max(Math.min(x(v) - tw / 2, w - tw - 2), 2);
+    ctx.fillText(text, tx, h - 6);
   }
-  stash.bars = bars; stash.total = data.length;
-  ctx.strokeStyle = grid;
+  stash.bars = bars; stash.total = clean.length;
 }
 
 function drawTornado(canvas, t) {
