@@ -1,0 +1,171 @@
+{
+  "runs": 20000,
+  "revenue": {
+    "p5": 338722,
+    "p10": 369804,
+    "p25": 426222,
+    "p50": 497617,
+    "p75": 575131,
+    "p90": 651451,
+    "p95": 700662
+  },
+  "avg_ticket": {
+    "p5": 160,
+    "p10": 167,
+    "p25": 178,
+    "p50": 193,
+    "p75": 210,
+    "p90": 229,
+    "p95": 241
+  },
+  "jobs_per_year": {
+    "p5": 1833,
+    "p10": 1973,
+    "p25": 2252,
+    "p50": 2566,
+    "p75": 2911,
+    "p90": 3213,
+    "p95": 3362
+  },
+  "sde": {
+    "p5": 44526,
+    "p10": 61502,
+    "p25": 94993,
+    "p50": 136141,
+    "p75": 180829,
+    "p90": 224242,
+    "p95": 251822
+  },
+  "sde_margin_pct": {
+    "p10": 16.1,
+    "p50": 27.4,
+    "p90": 35.9
+  },
+  "valuation": {
+    "p5": 87488,
+    "p10": 120999,
+    "p25": 187356,
+    "p50": 270369,
+    "p75": 367146,
+    "p90": 466345,
+    "p95": 531652
+  },
+  "prob_sde_negative": 0.0033,
+  "prob_revenue_in_owner_band": 0.0,
+  "valuation_given_owner_band": null,
+  "prob_valuation_in_original_range": 0.0063,
+  "tornado_base_valuation": 271271,
+  "tornado": [
+    {
+      "input": "Repairs per day",
+      "low": 146999,
+      "high": 409391,
+      "span": 262392
+    },
+    {
+      "input": "Price: premium screen",
+      "low": 225546,
+      "high": 342804,
+      "span": 117258
+    },
+    {
+      "input": "SDE multiple",
+      "low": 217514,
+      "high": 328620,
+      "span": 111106
+    },
+    {
+      "input": "Non-owner wages",
+      "low": 316847,
+      "high": 215571,
+      "span": 101277
+    },
+    {
+      "input": "Price: other small",
+      "low": 240732,
+      "high": 310377,
+      "span": 69645
+    },
+    {
+      "input": "Price: budget screen",
+      "low": 244456,
+      "high": 308558,
+      "span": 64102
+    },
+    {
+      "input": "Mix share: premium screen",
+      "low": 245451,
+      "high": 299074,
+      "span": 53623
+    },
+    {
+      "input": "Parts %: premium screen",
+      "low": 293991,
+      "high": 247640,
+      "span": 46351
+    },
+    {
+      "input": "Other opex % rev",
+      "low": 293187,
+      "high": 249355,
+      "span": 43831
+    },
+    {
+      "input": "Parts %: budget screen",
+      "low": 289588,
+      "high": 252954,
+      "span": 36633
+    },
+    {
+      "input": "Rent (annual)",
+      "low": 286260,
+      "high": 253693,
+      "span": 32567
+    },
+    {
+      "input": "Price: tablet screen",
+      "low": 259012,
+      "high": 289121,
+      "span": 30109
+    },
+    {
+      "input": "Parts %: other small",
+      "low": 278455,
+      "high": 262649,
+      "span": 15806
+    },
+    {
+      "input": "Parts %: tablet screen",
+      "low": 277938,
+      "high": 263270,
+      "span": 14668
+    },
+    {
+      "input": "Trading days / yr",
+      "low": 264714,
+      "high": 276734,
+      "span": 12020
+    },
+    {
+      "input": "Price: battery",
+      "low": 265427,
+      "high": 277115,
+      "span": 11689
+    },
+    {
+      "input": "Parts %: battery",
+      "low": 277067,
+      "high": 265475,
+      "span": 11591
+    }
+  ],
+  "spearman_vs_valuation": {
+    "repairs_per_day": 0.728,
+    "trading_days": 0.019,
+    "wages": -0.27,
+    "rent": -0.072,
+    "other_opex_pct": -0.125,
+    "sde_multiple": 0.296,
+    "avg_ticket": 0.43
+  }
+}

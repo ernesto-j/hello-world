@@ -1,6 +1,20 @@
 # hello-world
 An exercise in github and markdown
 
+## ScreenFixed valuation (branch: claude/screenfixed-valuation-88ic3d)
+
+Pressure-tested Monte Carlo valuation of the ScreenFixed screen-repair business
+(Brisbane CBD):
+
+- **[VALUATION.md](VALUATION.md)** — written summary: revenue/SDE/valuation distributions,
+  verified sale comps, rent reality check, sensitivity ranking, cited-vs-guessed flags
+- **[whatif.html](whatif.html)** — interactive what-if tool (open in any browser, no install):
+  live 10k-run Monte Carlo, sliders for every driver, tornado chart, JSON export
+- **[model/params.yaml](model/params.yaml)** — all model inputs with source annotations;
+  edit and re-run with real figures
+- **[model/simulate.py](model/simulate.py)** — the offline model (`python3 model/simulate.py`,
+  needs numpy/matplotlib/pyyaml); writes charts + `results.json` to `model/outputs/`
+
 #Header1
 ##Header2
 ###Sub-Header3

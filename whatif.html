@@ -1,0 +1,800 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScreenFixed Valuation Sandbox</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --blue: #2a78d6;
+    --blue-soft: #9ec5f4;
+    --red: #e34948;
+    --orange: #eb6834;
+    --orange-wash: rgba(235,104,52,0.12);
+    --good-text: #006300;
+    --accent: var(--blue);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --blue: #3987e5;
+      --blue-soft: #1c5cab;
+      --red: #e66767;
+      --orange: #d95926;
+      --orange-wash: rgba(217,89,38,0.16);
+      --good-text: #0ca30c;
+      --accent: var(--blue);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --blue: #3987e5;
+    --blue-soft: #1c5cab;
+    --red: #e66767;
+    --orange: #d95926;
+    --orange-wash: rgba(217,89,38,0.16);
+    --good-text: #0ca30c;
+    --accent: var(--blue);
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --blue: #2a78d6;
+    --blue-soft: #9ec5f4;
+    --red: #e34948;
+    --orange: #eb6834;
+    --orange-wash: rgba(235,104,52,0.12);
+    --good-text: #006300;
+    --accent: var(--blue);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    padding: 20px 24px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline;
+  }
+  header h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+  header .sub { color: var(--ink-2); font-size: 13px; }
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    padding: 20px 24px 48px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .controls { display: flex; flex-direction: column; gap: 14px; align-self: start; }
+  @media (min-width: 901px) { .controls { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; } }
+
+  .group h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin: 0 0 10px; font-weight: 600;
+  }
+  .driver { margin-bottom: 12px; }
+  .driver:last-child { margin-bottom: 2px; }
+  .driver-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .driver-head label { font-size: 13px; color: var(--ink); }
+  .driver-head .val { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 4px 0 2px; height: 20px; }
+  .lohi {
+    display: flex; gap: 6px; align-items: center;
+    color: var(--muted); font-size: 11px;
+  }
+  .lohi input {
+    width: 72px; font: 12px system-ui, sans-serif; font-variant-numeric: tabular-nums;
+    color: var(--ink-2); background: transparent;
+    border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px;
+  }
+  .lohi input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  details.adv { margin-top: 4px; }
+  details.adv summary { cursor: pointer; color: var(--muted); font-size: 11px; user-select: none; }
+  details.adv summary:focus-visible { outline: 2px solid var(--accent); border-radius: 3px; }
+  details.adv .lohi { margin-top: 6px; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button, .io button {
+    font: 12px system-ui, sans-serif; color: var(--ink);
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 10px; cursor: pointer;
+  }
+  .presets button:hover, .io button:hover { border-color: var(--accent); color: var(--accent); }
+  .presets button:focus-visible, .io button:focus-visible { outline: 2px solid var(--accent); }
+  .io { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .results { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+  .tile .v { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin-top: 2px; }
+  .tile .d { font-size: 11.5px; color: var(--ink-2); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .tile.hero { grid-column: span 2; }
+  .tile.hero .v { font-size: 30px; color: var(--accent); }
+  .flag-ok { color: var(--good-text); }
+  .flag-warn { color: var(--orange); }
+
+  .chart-card h3 { font-size: 13px; margin: 0 0 2px; font-weight: 650; }
+  .chart-card .cap { font-size: 11.5px; color: var(--ink-2); margin: 0 0 8px; }
+  canvas { width: 100%; height: auto; display: block; }
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 10;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 9px; font-size: 12px; color: var(--ink);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12); display: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .note { font-size: 11.5px; color: var(--muted); }
+  .note a { color: var(--accent); }
+  textarea.iojson {
+    width: 100%; height: 90px; font: 11px ui-monospace, monospace;
+    color: var(--ink-2); background: transparent;
+    border: 1px solid var(--border); border-radius: 6px; padding: 6px; display: none;
+  }
+</style>
+
+<header>
+  <h1>ScreenFixed valuation sandbox</h1>
+  <span class="sub">Monte Carlo (10,000 runs, live) · SDE × multiple · every slider is a range, not a point</span>
+</header>
+
+<div class="layout">
+  <div class="controls">
+    <div class="panel group">
+      <h2>Presets</h2>
+      <div class="presets">
+        <button data-preset="base">Base case</button>
+        <button data-preset="owner">Owner optimistic</button>
+        <button data-preset="conservative">Conservative</button>
+      </div>
+    </div>
+
+    <div class="panel group" id="g-throughput"><h2>Throughput</h2></div>
+    <div class="panel group" id="g-mix"><h2>Job mix &amp; pricing</h2></div>
+    <div class="panel group" id="g-costs"><h2>Cost stack (annual)</h2></div>
+    <div class="panel group" id="g-val"><h2>Valuation</h2></div>
+
+    <div class="panel group">
+      <h2>Save / load</h2>
+      <div class="io">
+        <button id="btn-export">Copy parameters (JSON)</button>
+        <button id="btn-import">Paste parameters</button>
+      </div>
+      <textarea class="iojson" id="iojson" aria-label="Parameters JSON"></textarea>
+      <p class="note" style="margin:8px 0 0">Parameters use the same schema as <code>model/params.yaml</code>, so tuned numbers can go straight back into the offline model.</p>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="tiles">
+      <div class="tile hero">
+        <div class="k">Valuation (median)</div>
+        <div class="v" id="t-val">–</div>
+        <div class="d" id="t-val-range">–</div>
+      </div>
+      <div class="tile">
+        <div class="k">Revenue (median)</div>
+        <div class="v" id="t-rev">–</div>
+        <div class="d" id="t-rev-range">–</div>
+      </div>
+      <div class="tile">
+        <div class="k">SDE (median)</div>
+        <div class="v" id="t-sde">–</div>
+        <div class="d" id="t-sde-margin">–</div>
+      </div>
+      <div class="tile">
+        <div class="k">Avg ticket</div>
+        <div class="v" id="t-ticket">–</div>
+        <div class="d" id="t-jobs">–</div>
+      </div>
+      <div class="tile">
+        <div class="k">Matches owner's $1.1–1.2M?</div>
+        <div class="v" id="t-band">–</div>
+        <div class="d">share of runs inside stated revenue</div>
+      </div>
+    </div>
+
+    <div class="panel chart-card">
+      <h3>Valuation distribution</h3>
+      <p class="cap">SDE × multiple across all runs. Dashed lines: p10 / p50 / p90. Shaded band: the original back-of-envelope $700K–$1.05M.</p>
+      <canvas id="c-val" height="260"></canvas>
+    </div>
+
+    <div class="panel chart-card">
+      <h3>Revenue distribution</h3>
+      <p class="cap">Jobs × average ticket. Shaded band: owner's stated $1.1–1.2M — if the histogram misses the band, the inputs and the owner's story disagree.</p>
+      <canvas id="c-rev" height="220"></canvas>
+    </div>
+
+    <div class="panel chart-card">
+      <h3>What moves the valuation most</h3>
+      <p class="cap">Each input swung from its p10 to p90 with everything else held at its median. Blue = input at p10, red = input at p90.</p>
+      <canvas id="c-tor" height="300"></canvas>
+    </div>
+
+    <p class="note">This tool is a reasoning aid, not a formal valuation. Default ranges mix cited market data with judgement — see <code>VALUATION.md</code> for which is which. All figures AUD.</p>
+  </div>
+</div>
+
+<div class="tooltip" id="tip"></div>
+
+<script>
+"use strict";
+/* ============================ defaults ============================ */
+const DEFAULTS = {
+  // Sources & confidence per input: see VALUATION.md. Prices from ScreenFixed's own
+  // published price list; trading days from their Mon-Fri hours; multiple from
+  // BizBuySell sector benchmark + AU listing comps. Shares/wages/opex are judgement.
+  throughput: {
+    repairs_per_day: { low: 6, mode: 10, high: 15 },
+    trading_days_per_year: { low: 244, mode: 250, high: 254 },
+  },
+  ticket_mix: {
+    concentration: 60,
+    categories: {
+      budget_screen:  { label: "Budget screens",  share: 0.40, price: { low: 119, mode: 149, high: 219 }, parts_cost_pct: { low: 0.25, mode: 0.35, high: 0.45 } },
+      premium_screen: { label: "Premium screens", share: 0.18, price: { low: 195, mode: 279, high: 650 }, parts_cost_pct: { low: 0.30, mode: 0.42, high: 0.55 } },
+      tablet_screen:  { label: "Tablet screens",  share: 0.10, price: { low: 129, mode: 179, high: 320 }, parts_cost_pct: { low: 0.25, mode: 0.35, high: 0.50 } },
+      battery:        { label: "Batteries",       share: 0.17, price: { low: 99,  mode: 119, high: 139 }, parts_cost_pct: { low: 0.20, mode: 0.30, high: 0.40 } },
+      other_small:    { label: "Ports & other",   share: 0.15, price: { low: 45,  mode: 129, high: 279 }, parts_cost_pct: { low: 0.10, mode: 0.20, high: 0.35 } },
+    },
+  },
+  costs: {
+    rent_annual: { low: 16000, mode: 28000, high: 45000 },
+    outgoings_annual: { low: 1000, mode: 3000, high: 6000 },
+    non_owner_wages_annual: { low: 60000, mode: 95000, high: 150000 },
+    other_opex_pct_revenue: { low: 0.06, mode: 0.10, high: 0.14 },
+  },
+  valuation: { sde_multiple: { low: 1.3, mode: 2.0, high: 2.8 } },
+  owner_check: { stated_revenue_low: 1100000, stated_revenue_high: 1200000 },
+};
+
+const PRESETS = {
+  base: () => structuredClone(DEFAULTS),
+  // "Owner optimistic" = what has to be true for the stated $1.1-1.2M revenue to hold
+  // at ScreenFixed's published prices: ~20+ jobs/day, premium-heavy mix, top-of-range multiple.
+  owner: () => {
+    const p = structuredClone(DEFAULTS);
+    p.throughput.repairs_per_day = { low: 16, mode: 22, high: 28 };
+    p.ticket_mix.categories.premium_screen.share = 0.30;
+    p.ticket_mix.categories.budget_screen.share = 0.30;
+    p.valuation.sde_multiple = { low: 2.0, mode: 2.5, high: 3.0 };
+    return p;
+  },
+  conservative: () => {
+    const p = structuredClone(DEFAULTS);
+    p.throughput.repairs_per_day = { low: 5, mode: 8, high: 11 };
+    p.valuation.sde_multiple = { low: 1.0, mode: 1.4, high: 1.8 };
+    p.costs.non_owner_wages_annual = { low: 90000, mode: 120000, high: 170000 };
+    return p;
+  },
+};
+
+let P = structuredClone(DEFAULTS);
+const RUNS = 10000;
+
+/* ============================ rng & samplers ============================ */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function triSample(rng, s) {
+  const u = rng(), a = s.low, c = s.mode, b = s.high;
+  if (b <= a) return a;
+  const fc = (c - a) / (b - a);
+  return u < fc ? a + Math.sqrt(u * (b - a) * (c - a)) : b - Math.sqrt((1 - u) * (b - a) * (b - c));
+}
+function triQuantile(s, q) {
+  const a = s.low, c = s.mode, b = s.high;
+  if (b <= a) return a;
+  const fc = (c - a) / (b - a);
+  return q < fc ? a + Math.sqrt(q * (b - a) * (c - a)) : b - Math.sqrt((1 - q) * (b - a) * (b - c));
+}
+function normal(rng) {
+  let u = 0, v = 0;
+  while (u === 0) u = rng();
+  while (v === 0) v = rng();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function gammaSample(rng, alpha) { // Marsaglia–Tsang, alpha >= 1 in our use
+  const d = alpha - 1 / 3, c = 1 / Math.sqrt(9 * d);
+  for (;;) {
+    let x, v;
+    do { x = normal(rng); v = 1 + c * x; } while (v <= 0);
+    v = v * v * v;
+    const u = rng();
+    if (u < 1 - 0.0331 * x * x * x * x) return d * v;
+    if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v;
+  }
+}
+function dirichlet(rng, alphas) {
+  const g = alphas.map(a => gammaSample(rng, Math.max(a, 1)));
+  const s = g.reduce((x, y) => x + y, 0);
+  return g.map(x => x / s);
+}
+
+/* ============================ model ============================ */
+function catKeys() { return Object.keys(P.ticket_mix.categories); }
+
+function evaluate(pt, cats) {
+  const jobs = pt.repairs_per_day * pt.trading_days;
+  let ticket = 0, partsPerJob = 0;
+  for (const c of cats) {
+    ticket += pt["share_" + c] * pt["price_" + c];
+    partsPerJob += pt["share_" + c] * pt["price_" + c] * pt["parts_" + c];
+  }
+  const revenue = jobs * ticket;
+  const other = revenue * pt.other_opex_pct;
+  const sde = revenue - jobs * partsPerJob - pt.wages - pt.rent - pt.outgoings - other;
+  return { jobs, ticket, revenue, sde, valuation: sde * pt.multiple };
+}
+
+function runMC() {
+  const rng = mulberry32(42);
+  const cats = catKeys();
+  const conc = P.ticket_mix.concentration;
+  const shareSum = cats.reduce((s, c) => s + P.ticket_mix.categories[c].share, 0);
+  const alphas = cats.map(c => (P.ticket_mix.categories[c].share / shareSum) * conc);
+  const out = { revenue: new Float64Array(RUNS), sde: new Float64Array(RUNS),
+                valuation: new Float64Array(RUNS), ticket: new Float64Array(RUNS),
+                jobs: new Float64Array(RUNS) };
+  const pt = {};
+  for (let i = 0; i < RUNS; i++) {
+    pt.repairs_per_day = triSample(rng, P.throughput.repairs_per_day);
+    pt.trading_days = triSample(rng, P.throughput.trading_days_per_year);
+    pt.wages = triSample(rng, P.costs.non_owner_wages_annual);
+    pt.rent = triSample(rng, P.costs.rent_annual);
+    pt.outgoings = triSample(rng, P.costs.outgoings_annual);
+    pt.other_opex_pct = triSample(rng, P.costs.other_opex_pct_revenue);
+    pt.multiple = triSample(rng, P.valuation.sde_multiple);
+    const sh = dirichlet(rng, alphas);
+    cats.forEach((c, k) => {
+      pt["share_" + c] = sh[k];
+      pt["price_" + c] = triSample(rng, P.ticket_mix.categories[c].price);
+      pt["parts_" + c] = triSample(rng, P.ticket_mix.categories[c].parts_cost_pct);
+    });
+    const r = evaluate(pt, cats);
+    out.revenue[i] = r.revenue; out.sde[i] = r.sde; out.valuation[i] = r.valuation;
+    out.ticket[i] = r.ticket; out.jobs[i] = r.jobs;
+  }
+  return out;
+}
+
+function medianPoint(cats) {
+  const shareSum = cats.reduce((s, c) => s + P.ticket_mix.categories[c].share, 0);
+  const pt = {
+    repairs_per_day: triQuantile(P.throughput.repairs_per_day, 0.5),
+    trading_days: triQuantile(P.throughput.trading_days_per_year, 0.5),
+    wages: triQuantile(P.costs.non_owner_wages_annual, 0.5),
+    rent: triQuantile(P.costs.rent_annual, 0.5),
+    outgoings: triQuantile(P.costs.outgoings_annual, 0.5),
+    other_opex_pct: triQuantile(P.costs.other_opex_pct_revenue, 0.5),
+    multiple: triQuantile(P.valuation.sde_multiple, 0.5),
+  };
+  for (const c of cats) {
+    pt["share_" + c] = P.ticket_mix.categories[c].share / shareSum;
+    pt["price_" + c] = triQuantile(P.ticket_mix.categories[c].price, 0.5);
+    pt["parts_" + c] = triQuantile(P.ticket_mix.categories[c].parts_cost_pct, 0.5);
+  }
+  return pt;
+}
+
+function tornado() {
+  const cats = catKeys();
+  const base = medianPoint(cats);
+  const baseVal = evaluate(base, cats).valuation;
+  const rows = [];
+  const swing = (label, key, spec) => {
+    const lo = { ...base }, hi = { ...base };
+    lo[key] = triQuantile(spec, 0.10);
+    hi[key] = triQuantile(spec, 0.90);
+    rows.push({ label, low: evaluate(lo, cats).valuation, high: evaluate(hi, cats).valuation });
+  };
+  swing("Repairs / day", "repairs_per_day", P.throughput.repairs_per_day);
+  swing("Trading days / yr", "trading_days", P.throughput.trading_days_per_year);
+  swing("Non-owner wages", "wages", P.costs.non_owner_wages_annual);
+  swing("Rent", "rent", P.costs.rent_annual);
+  swing("Other opex %", "other_opex_pct", P.costs.other_opex_pct_revenue);
+  swing("SDE multiple", "multiple", P.valuation.sde_multiple);
+  for (const c of cats) {
+    const cat = P.ticket_mix.categories[c];
+    swing("Price: " + cat.label.toLowerCase(), "price_" + c, cat.price);
+    swing("Parts %: " + cat.label.toLowerCase(), "parts_" + c, cat.parts_cost_pct);
+  }
+  // premium-share tilt via marginal Beta quantiles (sampled)
+  const conc = P.ticket_mix.concentration;
+  const shareSum = cats.reduce((s, c) => s + P.ticket_mix.categories[c].share, 0);
+  const aPrem = (P.ticket_mix.categories.premium_screen.share / shareSum) * conc;
+  const rng = mulberry32(7);
+  const draws = [];
+  for (let i = 0; i < 4000; i++) {
+    const g1 = gammaSample(rng, Math.max(aPrem, 1)), g2 = gammaSample(rng, Math.max(conc - aPrem, 1));
+    draws.push(g1 / (g1 + g2));
+  }
+  draws.sort((a, b) => a - b);
+  const tiltVals = [draws[Math.floor(0.10 * draws.length)], draws[Math.floor(0.90 * draws.length)]].map(s => {
+    const pt = { ...base };
+    const others = cats.filter(c => c !== "premium_screen");
+    const rest = others.reduce((t, c) => t + pt["share_" + c], 0);
+    others.forEach(c => { pt["share_" + c] *= (1 - s) / rest; });
+    pt["share_premium_screen"] = s;
+    return evaluate(pt, cats).valuation;
+  });
+  rows.push({ label: "Mix: premium share", low: tiltVals[0], high: tiltVals[1] });
+  rows.forEach(r => { r.span = Math.abs(r.high - r.low); });
+  rows.sort((a, b) => b.span - a.span);
+  return { baseVal, rows };
+}
+
+/* ============================ ui builders ============================ */
+const fmtK = v => Math.abs(v) >= 1e6 ? "$" + (v / 1e6).toFixed(2) + "M" : "$" + Math.round(v / 1e3) + "K";
+const fmt$ = v => "$" + Math.round(v).toLocaleString();
+
+const FIELDS = [
+  { group: "g-throughput", label: "Repairs per day", path: ["throughput", "repairs_per_day"], min: 2, max: 30, step: 0.5, fmt: v => v.toFixed(1) },
+  { group: "g-throughput", label: "Trading days / year", path: ["throughput", "trading_days_per_year"], min: 200, max: 360, step: 1, fmt: v => String(Math.round(v)) },
+  { group: "g-costs", label: "Rent", path: ["costs", "rent_annual"], min: 10000, max: 150000, step: 1000, fmt: fmt$ },
+  { group: "g-costs", label: "Outgoings", path: ["costs", "outgoings_annual"], min: 0, max: 40000, step: 500, fmt: fmt$ },
+  { group: "g-costs", label: "Non-owner wages", path: ["costs", "non_owner_wages_annual"], min: 0, max: 300000, step: 5000, fmt: fmt$ },
+  { group: "g-costs", label: "Other opex (% of revenue)", path: ["costs", "other_opex_pct_revenue"], min: 0.02, max: 0.25, step: 0.005, fmt: v => (v * 100).toFixed(1) + "%" },
+  { group: "g-val", label: "SDE multiple", path: ["valuation", "sde_multiple"], min: 1, max: 4, step: 0.05, fmt: v => v.toFixed(2) + "×" },
+];
+
+function getSpec(path) { return path.reduce((o, k) => o[k], P); }
+
+function triControl(f, spec) {
+  const wrap = document.createElement("div");
+  wrap.className = "driver";
+  wrap.innerHTML = `
+    <div class="driver-head"><label>${f.label}</label><span class="val"></span></div>
+    <input type="range" min="${f.min}" max="${f.max}" step="${f.step}" aria-label="${f.label} best guess">
+    <details class="adv"><summary>range (low / high)</summary>
+      <div class="lohi">
+        <span>low</span><input type="number" step="${f.step}" aria-label="${f.label} low">
+        <span>high</span><input type="number" step="${f.step}" aria-label="${f.label} high">
+      </div>
+    </details>`;
+  const [slider] = wrap.getElementsByTagName("input");
+  const nums = wrap.querySelectorAll(".lohi input");
+  const valEl = wrap.querySelector(".val");
+  const sync = () => {
+    const s = getSpec(f.path);
+    slider.value = s.mode; nums[0].value = s.low; nums[1].value = s.high;
+    valEl.textContent = `${f.fmt(s.low)} – ${f.fmt(s.mode)} – ${f.fmt(s.high)}`;
+  };
+  slider.addEventListener("input", () => {
+    const s = getSpec(f.path);
+    s.mode = +slider.value;
+    if (s.low > s.mode) s.low = s.mode;
+    if (s.high < s.mode) s.high = s.mode;
+    sync(); scheduleRun();
+  });
+  nums[0].addEventListener("change", () => { const s = getSpec(f.path); s.low = Math.min(+nums[0].value, s.mode); sync(); scheduleRun(); });
+  nums[1].addEventListener("change", () => { const s = getSpec(f.path); s.high = Math.max(+nums[1].value, s.mode); sync(); scheduleRun(); });
+  wrap._sync = sync;
+  sync();
+  return wrap;
+}
+
+function mixControls() {
+  const g = document.getElementById("g-mix");
+  const frag = document.createDocumentFragment();
+  for (const c of catKeys()) {
+    const cat = P.ticket_mix.categories[c];
+    const wrap = document.createElement("div");
+    wrap.className = "driver";
+    wrap.innerHTML = `
+      <div class="driver-head"><label>${cat.label}</label><span class="val"></span></div>
+      <input type="range" min="0" max="0.7" step="0.01" aria-label="${cat.label} share of jobs">
+      <details class="adv"><summary>price &amp; parts cost</summary>
+        <div class="lohi"><span>price</span>
+          <input type="number" step="5" aria-label="${cat.label} price low">
+          <input type="number" step="5" aria-label="${cat.label} price typical">
+          <input type="number" step="5" aria-label="${cat.label} price high">
+        </div>
+        <div class="lohi"><span>parts %</span>
+          <input type="number" step="1" min="0" max="90" aria-label="${cat.label} parts percent typical">
+        </div>
+      </details>`;
+    const slider = wrap.querySelector("input[type=range]");
+    const [pl, pm, ph, pp] = wrap.querySelectorAll(".adv input");
+    const valEl = wrap.querySelector(".val");
+    const sync = () => {
+      const shareSum = catKeys().reduce((s, k) => s + P.ticket_mix.categories[k].share, 0);
+      slider.value = cat.share;
+      pl.value = cat.price.low; pm.value = cat.price.mode; ph.value = cat.price.high;
+      pp.value = Math.round(cat.parts_cost_pct.mode * 100);
+      valEl.textContent = `${Math.round(cat.share / shareSum * 100)}% · ~$${cat.price.mode}`;
+    };
+    slider.addEventListener("input", () => { cat.share = Math.max(+slider.value, 0.01); syncAll(); scheduleRun(); });
+    pm.addEventListener("change", () => {
+      cat.price.mode = +pm.value;
+      cat.price.low = Math.min(cat.price.low, cat.price.mode);
+      cat.price.high = Math.max(cat.price.high, cat.price.mode);
+      sync(); scheduleRun();
+    });
+    pl.addEventListener("change", () => { cat.price.low = Math.min(+pl.value, cat.price.mode); sync(); scheduleRun(); });
+    ph.addEventListener("change", () => { cat.price.high = Math.max(+ph.value, cat.price.mode); sync(); scheduleRun(); });
+    pp.addEventListener("change", () => {
+      const m = Math.min(Math.max(+pp.value / 100, 0.02), 0.9);
+      const s = cat.parts_cost_pct;
+      const half = (s.high - s.low) / 2 || 0.08;
+      s.mode = m; s.low = Math.max(m - half, 0.01); s.high = Math.min(m + half, 0.95);
+      sync(); scheduleRun();
+    });
+    wrap._sync = sync;
+    sync();
+    frag.appendChild(wrap);
+  }
+  const note = document.createElement("p");
+  note.className = "note";
+  note.style.margin = "6px 0 0";
+  note.textContent = "Shares auto-normalise to 100%. Parts % is the parts cost as a share of that job's price.";
+  frag.appendChild(note);
+  g.appendChild(frag);
+}
+
+const controlEls = [];
+function buildControls() {
+  for (const f of FIELDS) {
+    const el = triControl(f, getSpec(f.path));
+    document.getElementById(f.group).appendChild(el);
+    controlEls.push(el);
+  }
+  mixControls();
+}
+function syncAll() {
+  document.querySelectorAll(".driver").forEach(d => d._sync && d._sync());
+}
+
+/* ============================ charts ============================ */
+const tip = document.getElementById("tip");
+function showTip(x, y, html) {
+  tip.innerHTML = html; tip.style.display = "block";
+  const pad = 12;
+  tip.style.left = Math.min(x + pad, window.innerWidth - tip.offsetWidth - 8) + "px";
+  tip.style.top = (y - tip.offsetHeight - pad < 8 ? y + pad : y - tip.offsetHeight - pad) + "px";
+}
+function hideTip() { tip.style.display = "none"; }
+
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || canvas.parentElement.clientWidth - 32;
+  const h = +canvas.getAttribute("height");
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.height = h + "px";
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+
+function drawHist(canvas, data, band, bandLabel, stash) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const ink2 = cssVar("--ink-2"), muted = cssVar("--muted"), grid = cssVar("--grid"),
+        blue = cssVar("--blue"), orangeWash = cssVar("--orange-wash"), orange = cssVar("--orange"),
+        baseline = cssVar("--baseline");
+  const sorted = Float64Array.from(data).sort();
+  const q = p => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+  const lo = q(0.005), hi = q(0.995);
+  const bins = 56, counts = new Array(bins).fill(0), bw = (hi - lo) / bins || 1;
+  for (const v of data) {
+    const b = Math.floor((v - lo) / bw);
+    if (b >= 0 && b < bins) counts[b]++;
+  }
+  const maxC = Math.max(...counts);
+  const mL = 8, mR = 8, mT = 18, mB = 22;
+  const pw = w - mL - mR, ph = h - mT - mB;
+  const x = v => mL + (v - lo) / (hi - lo) * pw;
+
+  ctx.clearRect(0, 0, w, h);
+  if (band) {
+    ctx.fillStyle = orangeWash;
+    const bx0 = Math.max(x(band[0]), mL), bx1 = Math.min(x(band[1]), w - mR);
+    if (bx1 > bx0) ctx.fillRect(bx0, mT, bx1 - bx0, ph);
+  }
+  ctx.fillStyle = blue;
+  const barW = pw / bins;
+  const bars = [];
+  for (let i = 0; i < bins; i++) {
+    const bh = counts[i] / maxC * ph;
+    const bx = mL + i * barW, by = mT + ph - bh;
+    if (counts[i] > 0) {
+      ctx.beginPath();
+      ctx.roundRect(bx + 0.5, by, Math.max(barW - 1.5, 1), bh, [3, 3, 0, 0]);
+      ctx.fill();
+    }
+    bars.push({ x0: bx, x1: bx + barW, lo: lo + i * bw, hi: lo + (i + 1) * bw, n: counts[i] });
+  }
+  // baseline
+  ctx.strokeStyle = baseline; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(mL, mT + ph + 0.5); ctx.lineTo(w - mR, mT + ph + 0.5); ctx.stroke();
+  // percentile lines
+  ctx.font = "10.5px system-ui, sans-serif";
+  for (const [p, lab] of [[0.10, "p10"], [0.50, "p50"], [0.90, "p90"]]) {
+    const v = q(p), px = x(v);
+    ctx.strokeStyle = ink2; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(px, mT); ctx.lineTo(px, mT + ph); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = ink2;
+    ctx.fillText(`${lab} ${fmtK(v)}`, Math.min(px + 3, w - 70), mT - 6 + (p === 0.5 ? 11 : 0));
+  }
+  if (band && bandLabel) {
+    ctx.fillStyle = orange;
+    ctx.fillText(bandLabel, Math.max(x(band[0]) + 3, mL + 3), mT + ph - 6);
+  }
+  // x ticks
+  ctx.fillStyle = muted;
+  for (let i = 0; i <= 4; i++) {
+    const v = lo + (hi - lo) * i / 4;
+    ctx.fillText(fmtK(v), x(v) - 14, h - 6);
+  }
+  stash.bars = bars; stash.total = data.length;
+  ctx.strokeStyle = grid;
+}
+
+function drawTornado(canvas, t) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const ink = cssVar("--ink"), ink2 = cssVar("--ink-2"), muted = cssVar("--muted"),
+        blue = cssVar("--blue"), red = cssVar("--red"), baseline = cssVar("--baseline");
+  const rows = t.rows.slice(0, 8);
+  const mL = 150, mR = 12, mT = 8, mB = 22;
+  const pw = w - mL - mR, ph = h - mT - mB;
+  const rh = ph / rows.length;
+  const allVals = rows.flatMap(r => [r.low, r.high]).concat([t.baseVal]);
+  const lo = Math.min(...allVals), hi = Math.max(...allVals);
+  const pad = (hi - lo) * 0.06 || 1;
+  const x = v => mL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * pw;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.font = "11px system-ui, sans-serif";
+  rows.forEach((r, i) => {
+    const cy = mT + i * rh + rh / 2;
+    const bh = Math.min(rh * 0.5, 16);
+    const [a, b] = [r.low, r.high];
+    ctx.fillStyle = blue;
+    ctx.fillRect(Math.min(x(a), x(t.baseVal)), cy - bh / 2, Math.abs(x(a) - x(t.baseVal)), bh);
+    ctx.fillStyle = red;
+    ctx.fillRect(Math.min(x(b), x(t.baseVal)), cy - bh / 2, Math.abs(x(b) - x(t.baseVal)), bh);
+    ctx.fillStyle = ink;
+    const lab = r.label.length > 22 ? r.label.slice(0, 21) + "…" : r.label;
+    ctx.fillText(lab, 8, cy + 4);
+    ctx.fillStyle = ink2;
+    ctx.fillText("±" + fmtK(r.span / 2), Math.min(Math.max(x(a), x(b)) + 6, w - 52), cy + 4);
+  });
+  ctx.strokeStyle = ink2; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x(t.baseVal), mT); ctx.lineTo(x(t.baseVal), mT + ph); ctx.stroke();
+  ctx.strokeStyle = baseline;
+  ctx.beginPath(); ctx.moveTo(mL, mT + ph + 0.5); ctx.lineTo(w - mR, mT + ph + 0.5); ctx.stroke();
+  ctx.fillStyle = muted;
+  for (let i = 0; i <= 3; i++) {
+    const v = (lo - pad) + ((hi + pad) - (lo - pad)) * i / 3;
+    ctx.fillText(fmtK(v), x(v) - 14, h - 6);
+  }
+}
+
+const stashes = { val: {}, rev: {} };
+function bindHistTips(canvas, stash, unit) {
+  canvas.addEventListener("mousemove", e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const bar = (stash.bars || []).find(b => mx >= b.x0 && mx < b.x1);
+    if (bar && bar.n > 0) {
+      showTip(e.clientX, e.clientY,
+        `<b>${fmtK(bar.lo)} – ${fmtK(bar.hi)}</b><br>${bar.n.toLocaleString()} runs (${(bar.n / stash.total * 100).toFixed(1)}%)`);
+    } else hideTip();
+  });
+  canvas.addEventListener("mouseleave", hideTip);
+}
+
+/* ============================ run & render ============================ */
+function q(arr, p) {
+  const s = Float64Array.from(arr).sort();
+  return s[Math.min(s.length - 1, Math.floor(p * s.length))];
+}
+
+function render() {
+  const out = runMC();
+  const t = tornado();
+  const vp = p => q(out.valuation, p), rp = p => q(out.revenue, p);
+  document.getElementById("t-val").textContent = fmtK(vp(0.5));
+  document.getElementById("t-val-range").textContent = `p10–p90: ${fmtK(vp(0.1))} – ${fmtK(vp(0.9))}`;
+  document.getElementById("t-rev").textContent = fmtK(rp(0.5));
+  document.getElementById("t-rev-range").textContent = `p10–p90: ${fmtK(rp(0.1))} – ${fmtK(rp(0.9))}`;
+  const sde50 = q(out.sde, 0.5);
+  document.getElementById("t-sde").textContent = fmtK(sde50);
+  document.getElementById("t-sde-margin").textContent = `${(sde50 / rp(0.5) * 100).toFixed(0)}% of revenue · P(SDE<0): ${(avg(out.sde, v => v < 0) * 100).toFixed(1)}%`;
+  document.getElementById("t-ticket").textContent = "$" + Math.round(q(out.ticket, 0.5));
+  document.getElementById("t-jobs").textContent = `${Math.round(q(out.jobs, 0.5)).toLocaleString()} jobs / yr (median)`;
+  const oc = P.owner_check;
+  const inBand = avg(out.revenue, v => v >= oc.stated_revenue_low && v <= oc.stated_revenue_high);
+  const bandEl = document.getElementById("t-band");
+  bandEl.textContent = (inBand * 100).toFixed(0) + "%";
+  bandEl.className = "v " + (inBand >= 0.15 ? "flag-ok" : "flag-warn");
+
+  drawHist(document.getElementById("c-val"), out.valuation, [700000, 1050000], "original range", stashes.val);
+  drawHist(document.getElementById("c-rev"), out.revenue, [oc.stated_revenue_low, oc.stated_revenue_high], "owner's claim", stashes.rev);
+  drawTornado(document.getElementById("c-tor"), t);
+}
+function avg(arr, pred) { let n = 0; for (const v of arr) if (pred(v)) n++; return n / arr.length; }
+
+let timer = null;
+function scheduleRun() { clearTimeout(timer); timer = setTimeout(render, 120); }
+
+/* ============================ presets & io ============================ */
+document.querySelectorAll(".presets button").forEach(b => {
+  b.addEventListener("click", () => { P = PRESETS[b.dataset.preset](); syncAll(); render(); });
+});
+const ioArea = document.getElementById("iojson");
+document.getElementById("btn-export").addEventListener("click", async () => {
+  const json = JSON.stringify(P, (k, v) => k === "label" ? undefined : v, 2);
+  ioArea.style.display = "block"; ioArea.value = json;
+  try { await navigator.clipboard.writeText(json); } catch (e) { /* textarea fallback shown */ }
+});
+document.getElementById("btn-import").addEventListener("click", () => {
+  if (ioArea.style.display !== "block") { ioArea.style.display = "block"; ioArea.value = ""; ioArea.placeholder = "Paste parameters JSON here, then click again."; ioArea.focus(); return; }
+  try {
+    const parsed = JSON.parse(ioArea.value);
+    for (const c of Object.keys(parsed.ticket_mix.categories)) {
+      parsed.ticket_mix.categories[c].label = (P.ticket_mix.categories[c] || {}).label || c;
+    }
+    P = parsed; syncAll(); render();
+    ioArea.style.display = "none";
+  } catch (err) { ioArea.placeholder = "Could not parse JSON: " + err.message; }
+});
+
+/* ============================ init ============================ */
+buildControls();
+render();
+window.addEventListener("resize", scheduleRun);
+["c-val", "c-rev"].forEach((id, i) => bindHistTips(document.getElementById(id), i === 0 ? stashes.val : stashes.rev));
+new MutationObserver(scheduleRun).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
