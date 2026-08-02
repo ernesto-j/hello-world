@@ -91,6 +91,18 @@
   }
   header h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
   header .sub { color: var(--ink-2); font-size: 13px; }
+  .mobilebar {
+    display: none;
+    position: sticky; top: 0; z-index: 5;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    align-items: baseline; gap: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mobilebar .mv { font-size: 18px; font-weight: 650; color: var(--accent); }
+  .mobilebar .mr { font-size: 12px; color: var(--ink-2); }
+  @media (max-width: 900px) { .mobilebar { display: flex; } }
   .layout {
     display: grid;
     grid-template-columns: 340px 1fr;
@@ -179,6 +191,11 @@
   <h1>ScreenFixed valuation sandbox</h1>
   <span class="sub">Monte Carlo (20,000 runs, live) · SDE × multiple · every slider is a range, not a point</span>
 </header>
+
+<div class="mobilebar" aria-live="polite">
+  <span class="mv" id="mb-val">–</span>
+  <span class="mr" id="mb-range">–</span>
+</div>
 
 <div class="layout">
   <div class="controls">
@@ -750,7 +767,8 @@ function drawTornado(canvas, t) {
   ctx.fillStyle = muted;
   for (let i = 0; i <= 3; i++) {
     const v = (lo - pad) + ((hi + pad) - (lo - pad)) * i / 3;
-    ctx.fillText(fmtK(v), x(v) - 14, h - 6);
+    const text = fmtK(v), tw = ctx.measureText(text).width;
+    ctx.fillText(text, Math.max(Math.min(x(v) - tw / 2, w - tw - 2), 2), h - 6);
   }
 }
 
@@ -780,6 +798,9 @@ function render() {
   const vp = p => q(out.valuation, p), rp = p => q(out.revenue, p);
   document.getElementById("t-val").textContent = fmtK(vp(0.5));
   document.getElementById("t-val-range").textContent = `p10–p90: ${fmtK(vp(0.1))} – ${fmtK(vp(0.9))}`;
+  document.getElementById("mb-val").textContent = fmtK(vp(0.5));
+  document.getElementById("mb-range").textContent =
+    `valuation p10–p90 ${fmtK(vp(0.1))}–${fmtK(vp(0.9))} · revenue ${fmtK(rp(0.5))}`;
   document.getElementById("t-rev").textContent = fmtK(rp(0.5));
   document.getElementById("t-rev-range").textContent = `p10–p90: ${fmtK(rp(0.1))} – ${fmtK(rp(0.9))}`;
   const sde50 = q(out.sde, 0.5);
