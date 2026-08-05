@@ -551,6 +551,20 @@ function triControl(f, spec) {
   return wrap;
 }
 
+function mixDisplayPcts() {
+  // Largest-remainder apportionment so the displayed integers always sum to 100.
+  const cats = catKeys();
+  const sum = cats.reduce((s, c) => s + P.ticket_mix.categories[c].share, 0) || 1;
+  const exact = cats.map(c => P.ticket_mix.categories[c].share / sum * 100);
+  const floors = exact.map(Math.floor);
+  let rem = 100 - floors.reduce((a, b) => a + b, 0);
+  const order = exact.map((e, i) => [e - floors[i], i]).sort((a, b) => b[0] - a[0]);
+  for (let k = 0; k < rem; k++) floors[order[k % cats.length][1]]++;
+  const out = {};
+  cats.forEach((c, i) => { out[c] = floors[i]; });
+  return out;
+}
+
 function mixControls() {
   const g = document.getElementById("g-mix");
   const frag = document.createDocumentFragment();
@@ -575,24 +589,28 @@ function mixControls() {
     const [pl, pm, ph, pp] = wrap.querySelectorAll(".adv input");
     const valEl = wrap.querySelector(".val");
     const sync = () => {
-      const shareSum = catKeys().reduce((s, k) => s + P.ticket_mix.categories[k].share, 0);
-      slider.value = cat.share;
-      pl.value = cat.price.low; pm.value = cat.price.mode; ph.value = cat.price.high;
-      pp.value = Math.round(cat.parts_cost_pct.mode * 100);
-      valEl.textContent = `${Math.round(cat.share / shareSum * 100)}% · ~$${cat.price.mode}`;
+      const liveCat = P.ticket_mix.categories[c]; // re-resolve: P is swapped by presets/import
+      slider.value = liveCat.share;
+      pl.value = liveCat.price.low; pm.value = liveCat.price.mode; ph.value = liveCat.price.high;
+      pp.value = Math.round(liveCat.parts_cost_pct.mode * 100);
+      valEl.textContent = `${mixDisplayPcts()[c]}% · ~$${liveCat.price.mode}`;
     };
-    slider.addEventListener("input", () => { cat.share = Math.max(+slider.value, 0.01); syncAll(); scheduleRun(); });
+    // resolve the category from the CURRENT P at event time — presets/import replace P,
+    // and writing to a stale captured object would silently disconnect the slider
+    const live = () => P.ticket_mix.categories[c];
+    slider.addEventListener("input", () => { live().share = Math.max(+slider.value, 0.01); syncAll(); scheduleRun(); });
     pm.addEventListener("change", () => {
-      cat.price.mode = +pm.value;
-      cat.price.low = Math.min(cat.price.low, cat.price.mode);
-      cat.price.high = Math.max(cat.price.high, cat.price.mode);
+      const pr = live().price;
+      pr.mode = +pm.value;
+      pr.low = Math.min(pr.low, pr.mode);
+      pr.high = Math.max(pr.high, pr.mode);
       sync(); scheduleRun();
     });
-    pl.addEventListener("change", () => { cat.price.low = Math.min(+pl.value, cat.price.mode); sync(); scheduleRun(); });
-    ph.addEventListener("change", () => { cat.price.high = Math.max(+ph.value, cat.price.mode); sync(); scheduleRun(); });
+    pl.addEventListener("change", () => { const pr = live().price; pr.low = Math.min(+pl.value, pr.mode); sync(); scheduleRun(); });
+    ph.addEventListener("change", () => { const pr = live().price; pr.high = Math.max(+ph.value, pr.mode); sync(); scheduleRun(); });
     pp.addEventListener("change", () => {
       const m = Math.min(Math.max(+pp.value / 100, 0.02), 0.9);
-      const s = cat.parts_cost_pct;
+      const s = live().parts_cost_pct;
       const half = (s.high - s.low) / 2 || 0.08;
       s.mode = m; s.low = Math.max(m - half, 0.01); s.high = Math.min(m + half, 0.95);
       sync(); scheduleRun();
@@ -838,7 +856,13 @@ document.getElementById("btn-import").addEventListener("click", () => {
   try {
     const parsed = JSON.parse(ioArea.value);
     for (const c of Object.keys(parsed.ticket_mix.categories)) {
-      parsed.ticket_mix.categories[c].label = (P.ticket_mix.categories[c] || {}).label || c;
+      const cat = parsed.ticket_mix.categories[c];
+      cat.label = (P.ticket_mix.categories[c] || {}).label || c;
+      // guard: shares must be positive finite numbers or normalisation divides by zero
+      if (!Number.isFinite(cat.share) || cat.share <= 0) cat.share = 0.01;
+    }
+    if (!Number.isFinite(parsed.ticket_mix.concentration) || parsed.ticket_mix.concentration <= 0) {
+      parsed.ticket_mix.concentration = 60;
     }
     P = parsed; syncAll(); render();
     ioArea.style.display = "none";

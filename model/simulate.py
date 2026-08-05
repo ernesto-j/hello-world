@@ -83,7 +83,8 @@ def run_mc(P, rng):
     cats = list(P["ticket_mix"]["categories"].keys())
     mix = P["ticket_mix"]
     conc = float(mix["concentration"])
-    alphas = np.array([mix["categories"][c]["share"] * conc for c in cats])
+    total = sum(mix["categories"][c]["share"] for c in cats)
+    alphas = np.array([mix["categories"][c]["share"] / total * conc for c in cats])
     shares = rng.dirichlet(alphas, size=n)  # (n, k)
 
     pt = {
@@ -127,7 +128,8 @@ def share_quantile(P, cats, cat, q):
     # Use a large sample from the marginal Beta to get the quantile without scipy.
     mix = P["ticket_mix"]
     conc = float(mix["concentration"])
-    a = mix["categories"][cat]["share"] * conc
+    total = sum(mix["categories"][c]["share"] for c in cats)
+    a = mix["categories"][cat]["share"] / total * conc
     b = conc - a
     rng = np.random.default_rng(12345)
     return float(np.quantile(rng.beta(a, b, 200_000), q))
