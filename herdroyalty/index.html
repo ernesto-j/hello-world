@@ -13,6 +13,8 @@
   --series:#16825A; --bench:#8C9990;
   --good:#16804A; --good-soft:#DDF2E4; --bad:#B8402A; --bad-soft:#F8E1DB; --warn:#9A6A10;
   --cost:#C07A66;
+  --p0:#0F5C40; --p1:#2F8F66; --p2:#72B895;
+  --ret-hi:#CFE9DA; --ret-band:#16825A; --ret-band-ink:#FFFFFF; --ret-mid:#F6EBCF; --ret-lo:#F8E1DB;
   --shadow:0 1px 2px rgba(20,32,26,.06),0 8px 24px -12px rgba(20,32,26,.18);
   --radius:14px;
   --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
@@ -29,6 +31,10 @@
     --series:#2A9A6A; --bench:#6E7C74;
     --good:#4CC47A; --good-soft:#15331F; --bad:#F07A62; --bad-soft:#3A1D17; --warn:#E0AE4C;
     --cost:#C9826E;
+  --p0:#9FDDBD; --p1:#4FB386; --p2:#2A7A57;
+  --ret-hi:#1B3A2B; --ret-band:#3FA877; --ret-band-ink:#06120C; --ret-mid:#3A2F17; --ret-lo:#3A1D17;
+    --p0:#9FDDBD; --p1:#4FB386; --p2:#2A7A57;
+    --ret-hi:#1B3A2B; --ret-band:#3FA877; --ret-band-ink:#06120C; --ret-mid:#3A2F17; --ret-lo:#3A1D17;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6);
   }
 }
@@ -275,6 +281,33 @@ select.scope{border:1px solid var(--line);background:var(--surface);border-radiu
 footer{border-top:1px solid var(--line);padding-block:18px 30px;color:var(--muted);font-size:12px}
 footer p{max-width:90ch;margin:0 0 6px}
 
+
+/* returns */
+.rf{border-collapse:separate;border-spacing:3px;width:100%}
+.rf th{border:0;text-align:center;padding:4px 2px;font-size:10px}
+.rf th.rl{text-align:left}
+.rf td{border:0;padding:0}
+.rf button{width:100%;border:0;border-radius:7px;padding:9px 2px;font:600 12.5px var(--f-mono);background:var(--surface-2);color:var(--ink)}
+.rf button.hi{background:var(--ret-hi)} .rf button.band{background:var(--ret-band);color:var(--ret-band-ink)} .rf button.mid{background:var(--ret-mid)} .rf button.lo{background:var(--ret-lo)}
+.rf button[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px}
+.rf td.rl{font-size:12.5px;font-weight:600;white-space:nowrap;padding-right:6px}
+.rf td.max{font:600 12px var(--f-mono);text-align:right;white-space:nowrap;padding-left:6px;color:var(--ink-2)}
+.keys{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px}
+.keys span{display:inline-flex;align-items:center;gap:5px}
+.keys i{width:12px;height:12px;border-radius:3px;display:inline-block}
+/* dynasty tree */
+.trees{display:flex;flex-direction:column;gap:14px}
+.tree{border:1px solid var(--line-2);border-radius:12px;padding:12px;background:var(--surface-2)}
+.tnode{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 10px 6px 6px;text-align:left;min-width:0}
+.tnode .hide{width:30px;height:30px;border-radius:7px}.tnode .tag{display:none}
+.tnode b{font-size:12.5px;display:block;line-height:1.15}.tnode small{font-size:11px;color:var(--muted)}
+.tnode.open{border-style:dashed;background:none}
+.tnode.open .dot{width:30px;height:30px;border-radius:7px;border:2px dashed var(--line);flex:0 0 auto}
+.tkids{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0 15px;padding:10px 0 0 14px;border-left:2px solid var(--line);position:relative}
+.tkids .tkids{margin-top:8px}
+.tbranch{display:flex;flex-direction:column}
+.tval{margin-left:auto;padding-left:8px;font:600 11.5px var(--f-mono);white-space:nowrap}
+
 @media (max-width:900px){
   .hero,.cols,.lab{grid-template-columns:1fr}
   .kpis{grid-template-columns:repeat(2,1fr)}
@@ -337,6 +370,10 @@ footer p{max-width:90ch;margin:0 0 6px}
         <div class="panel">
           <div class="panel-h"><h2>Holdings</h2><span class="muted" id="holdSub"></span></div>
           <div class="tbl-wrap"><table id="holdTbl"></table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Dynasty tree</h2><span class="muted" id="treeSub"></span></div>
+          <div class="trees" id="trees"></div>
         </div>
         <div class="panel">
           <div class="panel-h"><h2>Daily milk cheque</h2><span class="muted">last 30 days</span></div>
@@ -488,7 +525,7 @@ function freshState(){
   const cows = BASE_COWS.map(c=>({...c, lact0:c.lact, hist:[], calves:[], sireChoice:null, health:0, slots:0, filled:0, slotPaid:0}));
   const now = Date.now();
   const P0 = defaultParams();
-  cows.filter(c=>c.owned).forEach(c=>{ c.paid = round50(ltv(c,false,P0).total*0.8) });
+  cows.filter(c=>c.owned).forEach(c=>{ c.paid = round50(priceAt(c, TARGET, 0, P0)) });
   // Bella came with a 2-daughter package; her first daughter (by Zephyr) is already being reared
   const bella = cows.find(c=>c.id==='bella');
   bella.slots = 2; bella.filled = 1; bella.slotPaid = slotPrice(bella, 0, P0);
@@ -496,10 +533,10 @@ function freshState(){
   bella.daughters = [pip.id]; cows.splice(3,0,pip);
   const auctions = {};
   cows.filter(c=>!c.owned).forEach(c=>{
-    const fair = ltv(c,false,P0).total;
+    const fair = priceAt(c, TARGET, 0, P0);   // list so buyers expect ~15% a year
     const r = rng(hash(c.id+'px'));
-    const open = round50(fair*(0.70+r()*0.08));
-    auctions[c.id] = {cur:open, leader: BOTS[Math.floor(r()*BOTS.length)], bids:[], endsAt: now + AUCTION_MIN[c.id]*60000, status:'live', ceil: round50(fair*(0.86+r()*0.1)), pkg:0};
+    const open = round50(fair*(0.78+r()*0.07));
+    auctions[c.id] = {cur:open, leader: BOTS[Math.floor(r()*BOTS.length)], bids:[], endsAt: now + AUCTION_MIN[c.id]*60000, status:'live', ceil: round50(fair*(0.95+r()*0.1)), pkg:0};
     auctions[c.id].bids.push({who:auctions[c.id].leader, amt:open, day:0});
   });
   const s = {v:3, day:0, wallet:60000, params:P0, dec:{feed:0, supp:false, collar:false, done:{}}, cows, auctions, hist:[], events:[], badges:{}, alphaStreak:0, bestAlpha:0, checkins:0, queue:['feed','sire:marigold'], lossCarry:0};
@@ -542,7 +579,7 @@ function dayEcon(c, lact, dim, o={}, P=params()){
   if(o.noise && milking) Lb *= 1+nz(c.id,lact,dim);
   let L = Lb, fat=c.fat, prot=c.prot;
   if(o.mods && c.owned){
-    const d = o.dec || S.dec;
+    const d = o.dec || (S && S.dec) || {feed:0, supp:false, collar:false};
     if(d.collar){ direct.collar = COLLAR_DAY; if(milking) L += 0.3 }
     if(milking){ const f=FEED[d.feed]; L += f.dL; direct.feedTop = f.kg*GRAIN;
       if(d.supp){ L += SUPP_L; fat += SUPP_FAT; direct.supp = SUPP_DAY } }
@@ -742,13 +779,63 @@ function project(c, days, withMods, P=params()){
   }
   return r;
 }
+/* ---------- returns: expected yearly cash flows, IRR and price-for-return ---------- */
+const TARGET = 0.15, BAND = [0.13, 0.18], FLOW_YEARS = 25;
+const _flows = new Map();
+/* Expected net cash per year from owning cow c today, keeping her first nD heifers (or every female descendant for 'dyn').
+   Survival-weighted; kept daughters carry their rearing cost; unkept heifers are sold. */
+function flows(c, nD, P=params()){
+  const dyn = nD==='dyn', slots = dyn ? 6 : nD;
+  const key = [c.id,c.lact,c.dim,c.age||0,c.sireChoice,c.owned,nD,pkey(P)].join('|');
+  if(_flows.has(key)) return _flows.get(key);
+  const Y = FLOW_YEARS, cf = Array(Y).fill(0), STEP = 7;
+  const sC = Math.pow(1-P.cull/100, STEP/365), sR = Math.pow(REAR_SURVIVAL, STEP/REAR_DAYS);
+  const add = (t,v) => { const y = Math.floor(t/365); if(y<Y) cf[y] += v };
+  function run(cow, t, w, depth, root){
+    const base = {...cow, stage:null}; let lact = cow.lact, dim = cow.dim;
+    if(cow.stage==='rearing'){
+      let age = cow.age||0;
+      while(age<REAR_DAYS){ add(t, -P.rear/REAR_DAYS*growth(P,t).cf*STEP*w); w *= sR; age += STEP; t += STEP }
+      lact = 1; dim = 0; calve(base, 1, t, w, depth, null);
+    }
+    let dist = root && slots ? [1, ...Array(slots).fill(0)] : null, first = true;
+    while(t < Y*365){
+      t += STEP; dim += STEP; w *= sC;
+      if(dim > CYCLE){ dim -= CYCLE; lact++; if(lact>MAXL){ add(t, 1300*w); return }
+        if(root){
+          const sire = first ? sireOf(base) : CONV, ce = calfEV(base, sire), avail = dist ? 1-dist[slots] : 0;
+          add(t, ((1-avail)*ce.heiferP*ce.hv + (1-ce.heiferP)*ce.bv)*w);
+          if(avail>0){ const d = daughterOf(base, sire, 'x', lact, P); d.owned=false; run(d, t, w*avail*ce.heiferP, dyn?2:0, false) }
+          if(dist){ const nd = Array(slots+1).fill(0); for(let j=0;j<=slots;j++){ if(j<slots){ nd[j+1]+=dist[j]*ce.heiferP; nd[j]+=dist[j]*(1-ce.heiferP) } else nd[j]+=dist[j] } dist = nd }
+          first = false;
+        } else calve(base, lact, t, w, depth);
+      }
+      const e = dayEcon(base, lact, Math.max(1,dim-3), {t, mods: root && cow.owned}, P);
+      add(t, (e.net + (base.elite && e.milking ? embDaily(base)*CYCLE/LACT : 0))*STEP*w);
+    }
+  }
+  function calve(cow, lact, t, w, depth){
+    const ce = calfEV(cow, CONV);
+    if(depth>0){ add(t, (1-ce.heiferP)*ce.bv*w); const d = daughterOf(cow, CONV, 'x', lact, P); d.owned=false; run(d, t, w*ce.heiferP, depth-1, false) }
+    else add(t, ce.ev*w);
+  }
+  run(c, 0, 1, 0, true);
+  _flows.set(key, cf); return cf;
+}
+function npvAt(cf, r){ return cf.reduce((a,v,i)=>a+v/Math.pow(1+r,i+0.5),0) }
+function irr(cf, price){ if(npvAt(cf,-0.5) < price) return -0.5; let lo=-0.5, hi=3; for(let k=0;k<60;k++){ const m=(lo+hi)/2; if(npvAt(cf,m)>price) lo=m; else hi=m } return lo }
+/* the most you can pay (cow + package) and still expect return r */
+function priceAt(c, r, nD=0, P=params()){ return npvAt(flows(c, nD, P), r) }
+function payback(cf, price){ let cum=-price; for(let i=0;i<cf.length;i++){ const prev=cum; cum+=cf[i]; if(cum>=0) return i + (cf[i]? -prev/cf[i] : 0) } return null }
+function retClass(x){ return x>=BAND[0] && x<=BAND[1] ? 'band' : x>BAND[1] ? 'hi' : x>=0.08 ? 'mid' : 'lo' }
+
 /* the cow's state N days from now (for year-end trading-stock valuation) */
 function shifted(c, days){
   if(c.stage==='rearing'){ const age=(c.age||0)+days; return age<REAR_DAYS ? {...c, age} : {...c, stage:null, lact:1, dim:age-REAR_DAYS} }
   let lact=c.lact, dim=c.dim+days; while(dim>CYCLE){ dim-=CYCLE; lact++ }
   return {...c, lact, dim, retired: lact>MAXL, sireChoice:null};
 }
-function marketValue(c){ if(c.retired) return 1300; if(c.isDaughter) return NI_VALUE; return Math.max(1300, ltv({...c, slots:0, filled:0}, false).total*0.8) }
+function marketValue(c){ if(c.retired) return 1300; if(c.isDaughter) return NI_VALUE; return Math.max(1300, priceAt({...c, slots:0, filled:0, owned:false}, TARGET, 0)) }
 
 /* ============================================================
    RENDER: hide swatch avatar
@@ -781,14 +868,14 @@ function renderMarket(){
   $('#mktStats').innerHTML = `
     <div><b>${live.length}</b><span>live auctions</span></div>
     <div><b>${med.toFixed(1)}×</b><span>median Moo-ltiple</span></div>
-    <div><b>${fmtK(vol)}</b><span>current bids</span></div>`;
+    <div><b>${fmtK(vol)}</b><span>current bids · listed to return ~${TARGET*100}%</span></div>`;
   const breeds = ['All','Holstein','Jersey','Illawarra','Aussie Red','Elite'];
   $('#mktFilters').innerHTML = breeds.map(b=>`<button class="chip" data-breed="${b}" aria-pressed="${mktBreed===b}">${b==='Elite'?'Elite · embryos':b}</button>`).join('') +
     `<select id="mktSort" aria-label="Sort listings">
       ${[['ending','Ending soonest'],['mult','Lowest Moo-ltiple'],['yield','Highest yield today'],['ltv','Most LTV-L per $']].map(([v,l])=>`<option value="${v}" ${mktSort===v?'selected':''}>${l}</option>`).join('')}
     </select>`;
   let list = market.filter(c=> mktBreed==='All' || (mktBreed==='Elite' ? c.elite : c.breed===mktBreed));
-  const info = new Map(list.map(c=>[c.id,{t:t12m(c), l:ltv(c,false), e:cowToday(c), b:benchEcon(c,c.lact,c.dim)}]));
+  const info = new Map(list.map(c=>[c.id,{t:t12m(c), l:ltv(c,false), e:cowToday(c), b:benchEcon(c,c.lact,c.dim), r:irr(flows(c,0), S.auctions[c.id].cur)}]));
   const a = c=>S.auctions[c.id];
   list.sort((x,y)=>{
     const lx=a(x).status!=='live', ly=a(y).status!=='live'; if(lx!==ly) return lx-ly;
@@ -814,7 +901,7 @@ function renderMarket(){
       <div class="kv3">
         <div><span>T12M gross</span><b>${fmtK(i.t.gross)}</b></div>
         <div><span>Moo-ltiple</span><b>${m>50?'>50':m.toFixed(1)}×</b></div>
-        <div><span>LTV-L</span><b>${fmtK(i.l.total)}</b></div>
+        <div><span>Return at bid</span><b class="${i.r>=BAND[0]?'pos':i.r<0.08?'neg':''}">${(i.r*100).toFixed(0)}%/yr</b></div>
       </div>
       <div class="left"><div class="bar"><i style="width:${leftPct}%"></i></div><small><span>Lactation left</span><span>${i.l.lactLeft.toFixed(1)} of ${MAXL}</span></small></div>
       <div class="c-foot">
@@ -887,6 +974,8 @@ function renderCow(){
         <div class="tile"><span>Next calf sire</span><b style="font-size:13px">${rearing?'—':esc(sireOf(c).name)}</b><small>${rearing?'joins at 15 months':Math.round(ce.heiferP*100)+'% heifer chance'}</small></div>
       </div></div>` : bidBox(c,au)}
 
+    ${rearing ? '' : returnsPanel(c, price)}
+
     ${c.owned && !rearing ? daughterPanel(c) : ''}
 
     ${dynastyPanel(c, l, dyn)}
@@ -927,7 +1016,61 @@ function renderCow(){
   </div>`;
   if(!rearing) lactChart($('#lactChart'), c);
   dynChart($('#dynChart'), dyn);
+  if(!rearing) cashChart($('#cashChart'), c, price);
   tickCountdowns();
+}
+const bidDraft = {};
+const PKGS = [[0,'Cow only'],[1,'+1 daughter'],[2,'+2 daughters'],[3,'+3 daughters'],['dyn','Keep all']];
+function pkgCost(c, n){ if(n==='dyn') return 0; const pr = pkgPrices(c).prices; return pr.slice(0,n).reduce((a,b)=>a+b,0) }
+function returnsPanel(c, price){
+  const live = !c.owned && S.auctions[c.id]?.status==='live';
+  const steps = [0.9,1,1.1,1.2,1.35,1.5].map(k=>round50(price*k));
+  const sel = pkgSel[c.id] ?? S.auctions[c.id]?.pkg ?? 0, selBid = bidDraft[c.id];
+  const rows = PKGS.map(([n,label])=>{
+    const cf = flows(c,n), fee = pkgCost(c,n), max = npvAt(cf,TARGET) - fee;
+    return `<tr><td class="rl">${label}</td>${steps.map(b=>{ const r = irr(cf, b+fee);
+      return `<td><button class="${retClass(r)}" ${live?`data-rf="${n}|${b}"`:'disabled'} aria-pressed="${live && selBid===b && sel===n}" title="Pay ${fmt$(b)}${fee?' + '+fmt$(fee)+' package':''}: ${(r*100).toFixed(1)}% a year">${r<=-0.5?'<−50':(r*100).toFixed(0)}%</button></td>` }).join('')}<td class="max">${fmt$(Math.max(0,max))}</td></tr>`;
+  }).join('');
+  const cf0 = flows(c,0), pb = payback(cf0, price);
+  return `<div class="panel">
+    <div class="panel-h"><h2>Returns</h2><span class="muted">expected, before tax · ${c.owned?'at the price you paid':'at the current bid'}</span></div>
+    <div class="legend"><span><i style="border-color:var(--p0)"></i>Cow only</span><span><i style="border-color:var(--p1)"></i>+1 daughter</span><span><i style="border-color:var(--p2)"></i>+2 daughters</span><span><i style="border-color:var(--gold)"></i>Keep all descendants</span></div>
+    <div class="chart" id="cashChart"></div>
+    <p class="muted" style="margin:6px 0 14px;font-size:12.5px">Cumulative cash back after paying ${fmt$(price)}${c.owned?'':' plus any daughter package'}. The cow on her own pays back in <b>${pb!=null?pb.toFixed(1)+' years':'more than '+FLOW_YEARS+' years'}</b>. Daughters dip the line while they're reared, then extend it for years.</p>
+    <h3 style="font-size:14px;margin:0 0 4px">Return Finder</h3>
+    <p class="muted" style="margin:0 0 6px;font-size:12.5px">Yearly return (IRR) by what you pay for her and how many daughters you keep.${live?' Tap a cell to set your bid and package.':''}</p>
+    <div class="tbl-wrap"><table class="rf"><tr><th class="rl">Package</th>${steps.map(b=>`<th>${fmtK(b)}${b===round50(price)?'<br><span style="color:var(--ink)">now</span>':''}</th>`).join('')}<th>Max for ${TARGET*100}%</th></tr>${rows}</table></div>
+    <div class="keys"><span><i style="background:var(--ret-band)"></i>${BAND[0]*100}–${BAND[1]*100}% target</span><span><i style="background:var(--ret-hi)"></i>above ${BAND[1]*100}%</span><span><i style="background:var(--ret-mid)"></i>8–${BAND[0]*100}%</span><span><i style="background:var(--ret-lo)"></i>under 8%</span></div>
+  </div>`;
+}
+function cashChart(el, c, price){
+  if(!el) return;
+  const Y = 20, W=640, H=240, pl=50, pr=104, pt=12, pb=24, iw=W-pl-pr, ih=H-pt-pb;
+  const series = [[0,'var(--p0)','Cow only'],[1,'var(--p1)','+1'],[2,'var(--p2)','+2'],['dyn','var(--gold)','All']].map(([n,col,lab])=>{
+    const cf = flows(c,n), start = -(price + pkgCost(c,n)); let cum = start; const pts = [[0,start]];
+    for(let i=0;i<Y;i++){ cum += cf[i]; pts.push([i+1,cum]) }
+    return {n, col, lab, pts, pb: payback(cf, price+pkgCost(c,n))};
+  });
+  const all = series.flatMap(s=>s.pts.map(p=>p[1])), lo = Math.min(...all), hi = Math.max(...all);
+  const step = niceStep(hi-lo, 5);
+  const ymin = -niceMax(-lo,step), ymax = niceMax(Math.max(step,hi*1.05),step);
+  const x = v => pl + v/Y*iw, y = v => pt + ih - (v-ymin)/(ymax-ymin)*ih;
+  let g=''; for(let v=ymin; v<=ymax+1; v+=step) g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${v===0?'var(--ink-2)':'var(--line-2)'}" ${v===0?'opacity=".5"':''}/><text x="${pl-6}" y="${y(v)+3.5}" text-anchor="end">${v<0?'−':''}${Math.abs(v)>=1000?Math.abs(v)/1000+'k':Math.abs(v)}</text>`;
+  let xt=''; for(let i=0;i<=Y;i+=4) xt+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${i===0?'Buy':'Yr '+i}</text>`;
+  // end labels, nudged apart
+  const ends = series.map(s=>({s, yy:y(s.pts[Y][1])})).sort((a,b)=>a.yy-b.yy);
+  for(let i=1;i<ends.length;i++) if(ends[i].yy-ends[i-1].yy<13) ends[i].yy = ends[i-1].yy+13;
+  const lines = series.map(s=>`<path d="${s.pts.map((p,i)=>(i?'L':'M')+x(p[0]).toFixed(1)+' '+y(p[1]).toFixed(1)).join('')}" fill="none" stroke="${s.col}" stroke-width="2"/>`
+    + (s.pb!=null && s.pb<=Y ? `<circle cx="${x(s.pb)}" cy="${y(0)}" r="4.5" fill="${s.col}" stroke="var(--surface)" stroke-width="2"/>` : '')).join('');
+  const labels = ends.map(({s,yy})=>`<text x="${W-pr+6}" y="${yy+3.5}" style="fill:var(--ink-2);font:600 10.5px var(--f-mono)">${s.lab} ${fmtK(s.pts[Y][1])}</text>`).join('');
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Cumulative cash from owning this cow, by daughter package">${g}${xt}${lines}${labels}<line id="ccx" x1="0" x2="0" y1="${pt}" y2="${pt+ih}" stroke="var(--ink)" opacity="0"/><rect x="${pl}" y="${pt}" width="${iw}" height="${ih}" fill="transparent" id="chit"/></svg>`;
+  const svg = el.querySelector('svg'), cx = el.querySelector('#ccx');
+  el.querySelector('#chit').addEventListener('pointermove', ev=>{
+    const r = svg.getBoundingClientRect(), i = Math.max(0, Math.min(Y, Math.round(((ev.clientX-r.left)/r.width*W - pl)/iw*Y)));
+    cx.setAttribute('x1',x(i)); cx.setAttribute('x2',x(i)); cx.setAttribute('opacity',.3);
+    showTip(ev, `${i===0?'Purchase':'End of year '+i}<br>`+series.map(s=>`${s.lab==='All'?'Keep all':s.lab==='Cow only'?'Cow only':s.lab+' daughter'+(s.lab==='+1'?'':'s')} <b>${fmt$(s.pts[i][1])}</b>`).join('<br>'));
+  });
+  el.querySelector('#chit').addEventListener('pointerleave', ()=>{ hideTip(); cx.setAttribute('opacity',0) });
 }
 function dynastyPanel(c, l, dyn){
   const n12 = l.next12, P = S.params;
@@ -951,7 +1094,7 @@ function dynChart(el, dyn){
   const Y = dyn.own.net.length, W=640, H=220, pl=46, pr=10, pt=10, pb=24, iw=W-pl-pr, ih=H-pt-pb;
   const pos = i => Math.max(0,dyn.own.net[i]) + Math.max(0,dyn.desc.net[i]), neg = i => Math.min(0,dyn.own.net[i]) + Math.min(0,dyn.desc.net[i]);
   const hi = Math.max(...Array.from({length:Y},(_,i)=>pos(i))), lo = Math.min(0,...Array.from({length:Y},(_,i)=>neg(i)));
-  const step = hi>8000?4000:hi>4000?2000:hi>2000?1000:500;
+  const step = niceStep(hi-lo, 4);
   const ymax = niceMax(hi*1.08,step), ymin = lo<0 ? -niceMax(-lo,step) : 0;
   const y = v => pt + ih - (v-ymin)/(ymax-ymin)*ih, bw = iw/Y;
   let g=''; for(let v=ymin; v<=ymax; v+=step) g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y(v)+3.5}" text-anchor="end">${v<0?'−':''}${Math.abs(v)>=1000?(Math.abs(v)/1000)+'k':Math.abs(v)}</text>`;
@@ -1010,7 +1153,7 @@ function bidBox(c, au){
     </div>
     <form class="bidrow" id="bidForm">
       <label class="muted" for="bidAmt" style="flex-basis:100%;font-size:12px">Minimum ${fmt$(next)} · if you win you pay bid + ${fmt$(cum(sel))} package · wallet ${fmt$(S.wallet)} · bids in the last 60 s extend the auction</label>
-      <input id="bidAmt" inputmode="numeric" value="${next}" aria-label="Bid amount in A$">
+      <input id="bidAmt" inputmode="numeric" value="${Math.max(next, bidDraft[c.id]||0)}" aria-label="Bid amount in A$">
       <button class="btn btn-primary" type="submit">Bid</button>
       <button class="btn" type="button" id="quickBid">Bid ${fmt$(next)}</button>
     </form>
@@ -1037,6 +1180,7 @@ const tip = $('#tip');
 function showTip(ev, html){ tip.innerHTML=html; tip.classList.add('on'); const x=Math.min(ev.clientX+14, innerWidth-tip.offsetWidth-8); const y=Math.max(8, ev.clientY-tip.offsetHeight-12); tip.style.left=x+'px'; tip.style.top=y+'px' }
 function hideTip(){ tip.classList.remove('on') }
 function niceMax(v, step){ return Math.ceil(v/step)*step }
+function niceStep(range, n=5){ const raw = Math.max(1e-9,range/n), mag = Math.pow(10, Math.floor(Math.log10(raw))); for(const m of [1,2,2.5,5,10]) if(raw<=m*mag) return m*mag; return 10*mag }
 
 function lactChart(el, c){
   const W=640,H=250,pl=34,pr=12,pt=12,pb=26, iw=W-pl-pr, ih=H-pt-pb;
@@ -1084,10 +1228,10 @@ function earnChart(el){
   const W=640,H=210,pl=40,pr=10,pt=10,pb=24, iw=W-pl-pr, ih=H-pt-pb;
   const vals = data.flatMap(d=>[d.net, d.gross||0, d.bench]);
   const lo = Math.min(0,...vals), hi = Math.max(...vals);
-  const step = hi>60?20:10; const ymax = niceMax(hi*1.08,step), ymin = lo<0 ? -niceMax(-lo,step) : 0;
+  const step = niceStep(hi-lo, 4); const ymax = niceMax(hi*1.08,step), ymin = lo<0 ? -niceMax(-lo,step) : 0;
   const y = v => pt + ih - (v-ymin)/(ymax-ymin)*ih;
   const bw = iw/data.length;
-  let g=''; for(let v=ymin; v<=ymax; v+=step){ g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y(v)+3.5}" text-anchor="end">${v<0?'−':''}$${Math.abs(v)}</text>` }
+  let g=''; for(let v=ymin; v<=ymax+1e-6; v+=step){ g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y(v)+3.5}" text-anchor="end">${v<0?'−':''}$${Math.abs(v)}</text>` }
   let bars='', hits='';
   data.forEach((d,i)=>{
     const x0 = pl+i*bw+1, w=Math.max(2,bw-2), op = d.day>0?1:.55;
@@ -1185,12 +1329,33 @@ function renderHerd(){
       <td class="r num">${c.stage==='rearing'?'—':fmt$(e.gross,2)}<br><small class="muted">${e.L.toFixed(1)} L</small></td><td class="r num ${e.net<0?'neg':''}">${fmt$(e.net,2)}</td><td class="r num ${a>=0?'pos':'neg'}">${e.milking?pct(a):'—'}</td><td class="r num">${fmtK(l.total)}</td>
       <td>${c.slots?`<span class="pill ${c.filled?'good':''}">${c.filled}/${c.slots}</span>`:c.isDaughter?'<span class="pill">daughter</span>':'<span class="muted">—</span>'}</td><td class="r num pos">${fmt$(earned)}</td></tr>` }).join('');
   earnChart($('#earnChart'));
+  renderTree();
   $('#feed').innerHTML = S.events.slice().reverse().slice(0,40).map(ev=>`<div class="ev"><span class="ic" aria-hidden="true">${ev.ic}</span><span>${ev.t}</span><small>${ev.day<=0?'Start':dateOf(ev.day).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</small></div>`).join('');
   renderDecisions();
   renderBadges(m);
   renderLeader(m);
 }
 
+function treeNode(c){
+  const l = ltv(c,true);
+  const st = c.retired ? (c.lost?'lost in rearing':'retired') : c.stage==='rearing' ? `rearing · calves in ${REAR_DAYS-c.age}d` : c.dim<=LACT ? `lact ${c.lact} · ${cowToday(c).L.toFixed(1)} L` : `lact ${c.lact} · dry`;
+  return `<button class="tnode" data-cow="${c.id}">${hideSVG(c)}<span style="min-width:0"><b>${esc(c.name)}</b><small>${st}</small></span><span class="tval">${c.retired?'—':fmtK(l.total)}</span></button>`;
+}
+function treeBranch(c){
+  const kids = (c.daughters||[]).map(id=>S.cows.find(x=>x.id===id)).filter(Boolean);
+  const open = Math.max(0,(c.slots||0)-(c.filled||0));
+  const st = open && !c.retired ? slotStats(c, open) : null;
+  const holes = st ? st.pFill.map((p,j)=>`<div class="tnode open"><span class="dot"></span><span><b>Slot ${c.filled+j+1}</b><small>${Math.round(p*100)}% odds · ~${Math.max(1,Math.round(st.eta[j]/30.4))} mo</small></span><span class="tval">${fmt$(Math.max(0,st.vals[j]))}</span></div>`).join('') : '';
+  return `<div class="tbranch">${treeNode(c)}${kids.length||holes?`<div class="tkids">${kids.map(treeBranch).join('')}${holes}</div>`:''}</div>`;
+}
+function renderTree(){
+  const roots = S.cows.filter(c=>c.owned && !c.isDaughter);
+  const all = S.cows.filter(c=>c.owned);
+  const gens = Math.max(1, ...all.map(c=>(c.gen||0)+1));
+  const live = all.filter(c=>!c.retired), val = live.reduce((a,c)=>a+ltv(c,true).total,0);
+  $('#treeSub').textContent = `${live.length} animals · ${gens} generation${gens>1?'s':''} · ${fmtK(val)} lifetime value left`;
+  $('#trees').innerHTML = roots.map(c=>`<div class="tree">${treeBranch(c)}${!(c.slots)?`<div class="muted" style="font-size:12px;margin-top:8px">No daughter package: her heifers are sold. <button class="btn btn-sm btn-ghost" data-cow="${c.id}">Add a slot</button></div>`:''}</div>`).join('');
+}
 /* ---------- decisions ---------- */
 function marginal(decPatch){
   // A$/day and LTV-L change for the whole herd vs current decisions
@@ -1582,6 +1747,7 @@ document.addEventListener('click', e=>{
   if(t.id==='ff30') return nextDay(30);
   if(t.id==='extendSlot') return extendSlot();
   if(t.dataset.pkg){ pkgSel[openId] = +t.dataset.pkg; return renderCow() }
+  if(t.dataset.rf){ const [n,b]=t.dataset.rf.split('|'); pkgSel[openId] = n==='dyn'?3:+n; bidDraft[openId] = +b; renderCow(); const i=$('#bidAmt'); if(i){ i.scrollIntoView({block:'center'}); i.focus() } return toast(n==='dyn'?'Set to the 3-daughter package (the most you can reserve up front).':'Bid and package set. Review and tap Bid.') }
   if(t.id==='resetBtn'){ $('#resetConfirm').hidden=false; return }
   if(t.id==='resetNo'){ $('#resetConfirm').hidden=true; return }
   if(t.id==='resetYes'){ try{localStorage.removeItem('herdroyalty-v3')}catch(e){} S=freshState(); save(); pending={}; $('#resetConfirm').hidden=true; closeCow(); show('market'); toast('Demo reset. Fresh auctions are live.'); return }
