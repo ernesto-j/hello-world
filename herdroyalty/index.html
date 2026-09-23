@@ -191,7 +191,7 @@ tr.click:hover td{background:var(--surface-2)}
 .bull .bpi{font-family:var(--f-mono);font-weight:600;font-size:18px}
 .bull dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr) auto);gap:1px 10px;margin:0;font-size:11.5px}
 .bull dt{color:var(--muted)} .bull dd{margin:0;font-family:var(--f-mono);text-align:right}
-.done{font-size:12.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;border:1px dashed var(--line)}
+.done{font-size:12.5px;color:var(--ink-2);display:block;line-height:1.7;padding:8px 10px;border-radius:10px;border:1px dashed var(--line)}
 
 .feed{display:flex;flex-direction:column;gap:0;max-height:320px;overflow:auto}
 .ev{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-2);font-size:13px;align-items:start}
@@ -307,7 +307,7 @@ footer p{max-width:90ch;margin:0 0 6px}
     <div class="top-right">
       <div class="daychip"><b id="dateLbl"></b><span id="seasonLbl"></span></div>
       <div class="wallet"><span>Wallet</span><b class="num" id="walletLbl"></b></div>
-      <button class="btn btn-ghost btn-sm" id="ff7" title="Advance 7 days">+7 days</button>
+      <button class="btn btn-ghost btn-sm" id="ff7" title="Advance 7 days">+7d</button><button class="btn btn-ghost btn-sm" id="ff30" title="Advance 30 days">+30d</button>
       <button class="btn btn-primary" id="nextDay">Next day →</button>
     </div>
   </div>
@@ -318,9 +318,9 @@ footer p{max-width:90ch;margin:0 0 6px}
   <section class="view" id="v-market">
     <div class="hero">
       <div>
-        <div class="eyebrow">Live auctions · Australian dairy income rights</div>
+        <div class="eyebrow">Live auctions · whole cows on Australian farms</div>
         <h1>Own the <em>milk cheque</em>, not the paddock.</h1>
-        <p>Bid on the net income of individual cows on working Australian farms. Every listing is priced on its trailing 12-month earnings, the lactation it has left and the calves and embryos it's expected to produce.</p>
+        <p>Buy a working dairy cow outright. The farm milks and manages her, and you get her milk cheque and her calves. Add a daughter package to keep her heifers and extend your earnings for years. Every listing shows her last 12 months of revenue, how much lactation she has left, and what her daughters are worth.</p>
       </div>
       <div class="stats" id="mktStats"></div>
     </div>
@@ -339,8 +339,8 @@ footer p{max-width:90ch;margin:0 0 6px}
           <div class="tbl-wrap"><table id="holdTbl"></table></div>
         </div>
         <div class="panel">
-          <div class="panel-h"><h2>Daily net earnings</h2><span class="muted">last 30 days</span></div>
-          <div class="legend"><span><i style="border-color:var(--series)"></i>Your herd (net A$)</span><span><i style="border-color:var(--bench);border-top-style:dashed"></i>Herd-mate benchmark</span></div>
+          <div class="panel-h"><h2>Daily milk cheque</h2><span class="muted">last 30 days</span></div>
+          <div class="legend"><span><i style="border-color:var(--series);opacity:.35;border-top-width:6px"></i>Gross</span><span><i style="border-color:var(--series);border-top-width:6px"></i>Net</span><span><i style="border-color:var(--bench);border-top-style:dashed"></i>Herd-mate net benchmark</span></div>
           <div class="chart" id="earnChart"></div>
         </div>
         <div class="panel">
@@ -392,13 +392,14 @@ footer p{max-width:90ch;margin:0 0 6px}
           <div class="tbl-wrap"><table class="pl" id="plTbl"></table></div>
           <p class="muted" style="font-size:12px;margin:10px 0 0">Operating costs are budgeted as a % of each cow's base milk revenue. Your decisions (feed top-up, supplement, collar, semen) are charged at their actual A$ cost, so you see their true marginal return.</p>
         </div>
+        <div class="panel" id="taxPanel"></div>
       </div>
     </div>
   </section>
 </main>
 
 <footer class="wrap">
-  <p><b>Demo, not an offer.</b> All animals, farms, sires, bidders and figures are simulated. Numbers are benchmarked to published Australian dairy ranges (milk solids price, lactation curves, cost structure). Nothing here is a financial product or advice.</p>
+  <p><b>Demo, not an offer.</b> You buy whole animals, not fractions. All animals, farms, sires, bidders and figures are simulated. Numbers are benchmarked to published Australian dairy ranges (milk solids price, lactation curves, cost structure). Nothing here is a financial product or advice.</p>
   <p><button class="btn btn-sm" id="resetBtn">Reset demo</button> <span id="resetConfirm" hidden>Reset all progress? <button class="btn btn-sm" id="resetYes">Yes, reset</button> <button class="btn btn-sm btn-ghost" id="resetNo">Cancel</button></span></p>
 </footer>
 
@@ -438,6 +439,12 @@ const BULLS = {
   maverick:{id:'maverick', name:'Bushlea MAVERICK', tag:'Components & fertility', bpi:371, milk:'+420 L', fat:'+0.28%', prot:'+0.17%', fert:111, ease:'99%', straw:44, conc:0.52, sexed:true},
   comet:{id:'comet', name:'Riverbend COMET (genomic)', tag:'Young sire, high ceiling', bpi:448, milk:'+1,250 L', fat:'+0.05%', prot:'+0.06%', fert:99, ease:'95%', straw:72, conc:0.45, sexed:true, rel:'58% rel.'},
 };
+const HEIFER_NAMES = ['Pip','Rosie','Mabel','Hazel','Willow','Nell','Ivy','Maisie','Olive','Clementine','Bonnie','Juniper'];
+const REAR_DAYS = 730, REAR_SURVIVAL = 0.92, NI_VALUE = 20; // 24 months to first calving; ATO natural-increase minimum for cattle
+// Australian resident rates, FY2026–27 (first bracket 15% from 1 July 2026), plus 2% Medicare levy
+const BRACKETS = [[18200,0],[45000,0.15],[135000,0.30],[190000,0.37],[Infinity,0.45]];
+function incomeTax(x){ if(x<=0) return 0; let t=0, prev=0; for(const [cap,r] of BRACKETS){ if(x>prev) t += (Math.min(x,cap)-prev)*r; prev=cap } return t + x*0.02 }
+function margRate(x){ for(const [cap,r] of BRACKETS) if(x<cap) return r+0.02; return 0.47 }
 const BOTS = ['@gippsgrazer','@MooMentum','@udderlyrich','@calfcapital','@lactose_vc','@ruminant_ray','@herdhedge','@jerseyjules'];
 
 const BASE_COWS = [
@@ -476,34 +483,41 @@ function nlis(c){const r=rng(hash(c.id+'nlis'));const L='ABCDEFGHJKLMNPRSTUVWXYZ
 /* ---------- state ---------- */
 let S;
 function freshState(){
-  const cows = BASE_COWS.map(c=>({...c, lact0:c.lact, hist:[], calves:[], sireChoice:null, health:0, collarUnlocked:false}));
+  const cows = BASE_COWS.map(c=>({...c, lact0:c.lact, hist:[], calves:[], sireChoice:null, health:0, slots:0, filled:0, slotPaid:0}));
   const now = Date.now();
-  cows.filter(c=>c.owned).forEach(c=>{ c.paid = round50(ltv(c,false,defaultParams()).total*0.8) });
+  const P0 = defaultParams();
+  cows.filter(c=>c.owned).forEach(c=>{ c.paid = round50(ltv(c,false,P0).total*0.8) });
+  // Bella came with a 2-daughter package; her first daughter (by Zephyr) is already being reared
+  const bella = cows.find(c=>c.id==='bella');
+  bella.slots = 2; bella.filled = 1; bella.slotPaid = slotPrice(bella, 0, P0);
+  const pip = daughterOf(bella, BULLS.zephyr, 'Pip'); pip.stage='rearing'; pip.age=400;
+  bella.daughters = [pip.id]; cows.splice(3,0,pip);
   const auctions = {};
   cows.filter(c=>!c.owned).forEach(c=>{
-    const fair = ltv(c,false,defaultParams()).total;
+    const fair = ltv(c,false,P0).total;
     const r = rng(hash(c.id+'px'));
     const open = round50(fair*(0.70+r()*0.08));
-    auctions[c.id] = {cur:open, leader: BOTS[Math.floor(r()*BOTS.length)], bids:[], endsAt: now + AUCTION_MIN[c.id]*60000, status:'live', ceil: round50(fair*(0.86+r()*0.1))};
+    auctions[c.id] = {cur:open, leader: BOTS[Math.floor(r()*BOTS.length)], bids:[], endsAt: now + AUCTION_MIN[c.id]*60000, status:'live', ceil: round50(fair*(0.86+r()*0.1)), pkg:0};
     auctions[c.id].bids.push({who:auctions[c.id].leader, amt:open, day:0});
   });
-  const s = {v:1, day:0, wallet:60000, params:defaultParams(), dec:{feed:0, supp:false, collar:false, done:{}}, cows, auctions, hist:[], events:[], badges:{}, alphaStreak:0, bestAlpha:0, checkins:0, queue:['feed','sire:marigold'], seen:{}};
+  const s = {v:2, day:0, wallet:60000, params:P0, dec:{feed:0, supp:false, collar:false, done:{}}, cows, auctions, hist:[], events:[], badges:{}, alphaStreak:0, bestAlpha:0, checkins:0, queue:['feed','sire:marigold'], lossCarry:0};
   S = s;
-  // back-fill 30 days of history for owned cows
+  // back-fill 30 days of history
   for(let back=30; back>=1; back--){
-    let L=0, net=0, bench=0;
+    let L=0, net=0, bench=0, gross=0;
     cows.filter(c=>c.owned).forEach(c=>{
-      let lact=c.lact, dim=c.dim-back; if(dim<1){lact--;dim+=CYCLE}
-      const e = dayEcon(c,lact,dim,{noise:true});
-      const b = benchEcon(c,lact,dim);
-      c.hist.push({day:-back, L:e.L, net:e.net}); L+=e.L; net+=e.net; bench+=b.net;
+      let e, b;
+      if(c.stage==='rearing'){ e = dayEcon(c,0,0,{mods:true}); b = {net:e.net} }
+      else { let lact=c.lact, dim=c.dim-back; if(dim<1){lact--;dim+=CYCLE}
+        e = dayEcon(c,lact,dim,{noise:true, mods:true, dec:{feed:0,supp:false,collar:false}}); b = benchEcon(c,lact,dim) }
+      c.hist.push({day:-back, L:e.L, net:e.net, gross:e.gross}); L+=e.L; net+=e.net; gross+=e.gross; bench+=b.net;
     });
-    s.hist.push({day:-back, L, net, bench});
+    s.hist.push({day:-back, L, net, gross, bench});
   }
-  s.events.push({day:0, ic:'🐄', t:'Welcome aboard: you own income rights in 3 cows. Four decisions are waiting in your inbox.'});
+  s.events.push({day:0, ic:'🐄', t:'Welcome aboard: you own 3 cows outright, plus Pip, a heifer from Bella\'s daughter package. Four decisions are waiting in your inbox.'});
   return s;
 }
-function defaultParams(){return {...PRESETS.south, preset:'south', cull:20, disc:9, dryCost:3.2}}
+function defaultParams(){return {...PRESETS.south, preset:'south', cull:20, disc:9, dryCost:3.2, rear:2600, ins:2.5, income:150000, ncl:false}}
 
 /* ---------- lactation & economics ---------- */
 function wood(dim, peak){ if(dim<1||dim>LACT) return 0; const b=0.2,c=0.004; const a=peak/(Math.pow(50,b)*Math.exp(-b)); return a*Math.pow(dim,b)*Math.exp(-c*dim) }
@@ -511,11 +525,17 @@ function cowPeak(c, lact){ return c.peak*LM[Math.min(lact,6)]/LM[c.lact0] }
 function params(){ return S ? S.params : defaultParams() }
 
 function dayEcon(c, lact, dim, o={}, P=params()){
+  const direct = {feedTop:0, supp:0, collar:0, ins:0};
+  const base = {feed:0, labour:0, vet:0, util:0, other:0, dry:0, rear:0};
+  if(o.mods && c.owned && c.paid) direct.ins = P.ins/100*c.paid/365;   // livestock mortality insurance on purchase value
+  if(c.stage==='rearing'){
+    base.rear = P.rear/REAR_DAYS;
+    return {milking:false, rearing:true, L:0, kgMS:0, gross:0, base, direct, mgmt:0, net:-base.rear-direct.ins, fat:c.fat, prot:c.prot};
+  }
   const milking = dim>=1 && dim<=LACT;
   let Lb = milking ? wood(dim, cowPeak(c,lact)) : 0;
   if(o.noise && milking) Lb *= 1+nz(c.id,lact,dim);
   let L = Lb, fat=c.fat, prot=c.prot;
-  const direct = {feedTop:0, supp:0, collar:0};
   if(o.mods && c.owned){
     const d = o.dec || S.dec;
     if(d.collar){ direct.collar = COLLAR_DAY; if(milking) L += 0.3 }
@@ -526,14 +546,14 @@ function dayEcon(c, lact, dim, o={}, P=params()){
   const kgMS = L*1.03*(fat+prot)/100;
   const gross = kgMS*P.price;
   const grossB = Lb*1.03*(c.fat+c.prot)/100*P.price;
-  const base = {};
   COSTS.forEach(([k])=> base[k] = milking ? grossB*P[k]/100 : 0);
   base.dry = milking ? 0 : P.dryCost;       // dry-cow upkeep
   const mgmt = gross*P.mgmt/100;
-  const costSum = Object.values(base).reduce((a,b)=>a+b,0) + direct.feedTop + direct.supp + direct.collar + mgmt;
+  const costSum = Object.values(base).reduce((a,b)=>a+b,0) + direct.feedTop + direct.supp + direct.collar + direct.ins + mgmt;
   return {milking, L, kgMS, gross, base, direct, mgmt, net: gross-costSum, fat, prot};
 }
-function benchEcon(c, lact, dim){ // average herd-mate: same breed & stage, herd-average genetics (peak ×0.88)
+function benchEcon(c, lact, dim){ // average herd-mate: same breed & stage, herd-average genetics
+  if(c.stage==='rearing') return dayEcon({...c, owned:false}, 0, 0, {});
   const ghost = {...c, owned:false, elite:false};
   ghost.peak = (c.breed==='Jersey' ? 23 : c.breed==='Holstein' ? 32 : 29.5) * LM[c.lact0];
   return dayEcon(ghost, lact, dim, {});
@@ -549,18 +569,73 @@ function calfEV(c, sire, dec){
   const bv = 90;
   return {conc, heiferP, hv, bv, ev: heiferP*hv + (1-heiferP)*bv, straws: Math.min(3,1/conc), strawCost: s.straw*Math.min(3,1/conc)};
 }
+/* ---------- daughter rights ---------- */
+function daughterOf(dam, sire, name){
+  const s = sire||CONV, bpi = Math.round((dam.bpi+s.bpi)/2), g = 1 + (bpi-dam.bpi)/2000;
+  const n = (dam.daughters||[]).length;
+  const nm = name || HEIFER_NAMES[hash(dam.id+':'+n+':'+(S?S.day:0)) % HEIFER_NAMES.length];
+  return {id:dam.id+'-'+nm.toLowerCase()+n, name:`${dam.stud} ${nm}`, stud:dam.stud, breed:dam.breed, region:dam.region, farm:dam.farm,
+    lact:1, dim:0, lact0:1, peak:dam.peak/LM[dam.lact0]*LM[1]*g, fat:dam.fat, prot:dam.prot, bpi, cls:'Heifer', sire:s.name, dam:dam.name, damId:dam.id,
+    elite:!!dam.elite, owned:true, paid:0, isDaughter:true, stage:'rearing', age:0, hist:[], calves:[], sireChoice:null, health:0, slots:0, filled:0, slotPaid:0};
+}
+const _dpv = new Map();
+/* PV of one daughter at her birth: her milking life (from first calving at 24 mo), less rearing cost and rearing losses */
+function daughterPV(dam, sire, P=params()){
+  const s = sire||CONV;
+  const key = [dam.id,s.id,P.price,P.feed,P.labour,P.vet,P.util,P.other,P.mgmt,P.cull,P.disc,P.dryCost,P.rear].join('|');
+  if(_dpv.has(key)) return _dpv.get(key);
+  const d = daughterOf(dam, s, 'x'); d.owned=false; d.stage=null;
+  const kd = 1/(1+P.disc/100);
+  const v = (ltv(d,false,P).total + calfEV(d,CONV).ev) * REAR_SURVIVAL * Math.pow(kd,2) - P.rear*kd;
+  _dpv.set(key, v); return v;
+}
+function calvings(c){ const out=[]; if(c.stage==='rearing') return out; let t=CYCLE-c.dim+1, lact=c.lact+1, first=true; while(lact<=MAXL){ out.push({t,first}); t+=CYCLE; lact++; first=false } return out }
+/* value today of each additional daughter slot (index 0 = next unfilled): keeping her vs selling her as a calf, and the odds it gets filled */
+function slotStats(c, nSlots, P=params(), dec){
+  const d = dec || (S && S.dec) || {};
+  const k = (1-(P.cull-(c.owned&&d.collar?4:0))/100)/(1+P.disc/100);
+  let dist = [1, ...Array(nSlots).fill(0)]; const vals = Array(nSlots).fill(0), when = Array(nSlots).fill(0);
+  for(const cv of calvings(c)){
+    const sire = cv.first ? sireOf(c) : CONV, ce = calfEV(c, sire, d), dpv = daughterPV(c, sire, P), df = Math.pow(k, cv.t/365);
+    const nd = Array(nSlots+1).fill(0);
+    for(let j=0;j<=nSlots;j++){ if(j<nSlots){ vals[j]+=dist[j]*ce.heiferP*(dpv-ce.hv)*df; when[j]+=dist[j]*ce.heiferP*cv.t; nd[j+1]+=dist[j]*ce.heiferP; nd[j]+=dist[j]*(1-ce.heiferP) } else nd[j]+=dist[j] }
+    dist = nd;
+  }
+  const pFill = vals.map((_,j)=> dist.slice(j+1).reduce((a,b)=>a+b,0));
+  return {vals, pFill, eta: when.map((w,j)=> pFill[j]>0 ? w/pFill[j] : 0)};
+}
+function slotPrice(c, idx, P=params()){ const st = slotStats(c, idx+1, P); return Math.max(150, round50(st.vals[idx]*0.9)) }
+function nextSlotPrice(c){ return slotPrice(c, Math.max(0,(c.slots||0)-(c.filled||0))) }
+
 function ltv(c, withMods, P=params(), dec){
   const d = dec || (S && S.dec) || {feed:0,supp:false,collar:false};
   const cull = (P.cull - (withMods && c.owned && d.collar ? 4 : 0))/100;
   const k = (1-cull)/(1+P.disc/100);
+  if(c.stage==='rearing'){
+    const rem = Math.max(0, REAR_DAYS-(c.age||0)), kd = 1/(1+P.disc/100);
+    const cow = {...c, stage:null, lact:1, dim:0};
+    const inner = ltv(cow, withMods, P, d), calf = calfEV(cow, CONV, d).ev;
+    const f = Math.pow(REAR_SURVIVAL, rem/REAR_DAYS)*Math.pow(kd, rem/365);
+    const parts = {milk:inner.parts.milk*f, calves:(inner.parts.calves+calf)*f, embryo:0, salvage:inner.parts.salvage*f, daughters:0, refund:0, rearing:-(P.rear/REAR_DAYS)*rem*Math.pow(kd,rem/730)};
+    const next12 = rem>=365 ? -(P.rear/REAR_DAYS)*365 : -(P.rear/REAR_DAYS)*rem + calf + inner.next12*(365-rem)/365;
+    return {total:Object.values(parts).reduce((a,b)=>a+b,0), parts, uptime: rem>=365?0:inner.uptime*(365-rem)/365, years: rem/365+inner.years, next12, lactLeft:MAXL, rearLeft:rem};
+  }
   let lact=c.lact, dim=c.dim, t=0, first=true, uptime=0, next12=0;
-  const parts = {milk:0, calves:0, embryo:0, salvage:0};
+  const parts = {milk:0, calves:0, embryo:0, salvage:0, daughters:0, refund:0, rearing:0};
+  const nS = Math.max(0,(c.slots||0)-(c.filled||0));
+  let dist = nS ? [1, ...Array(nS).fill(0)] : null;
   while(t < CYCLE*7){
     t++; dim++;
     if(dim > CYCLE){ lact++; dim=1; if(lact>MAXL) break;
-      const ev = first ? calfEV(c, withMods ? sireOf(c) : (c.owned ? sireOf(c) : CONV), d).ev : calfEV(c, CONV, d).ev;
-      parts.calves += ev*Math.pow(k,t/365); first=false;
-      if(t<=365) next12 += ev;
+      const sire = first ? sireOf(c) : CONV; first=false;
+      const ce = calfEV(c, sire, d), df = Math.pow(k,t/365);
+      if(dist){
+        const avail = 1-dist[nS], dpv = daughterPV(c, sire, P);
+        parts.daughters += avail*ce.heiferP*dpv*df;
+        const cash = (1-avail)*ce.heiferP*ce.hv + (1-ce.heiferP)*ce.bv;
+        parts.calves += cash*df; if(t<=365) next12 += cash - avail*ce.heiferP*(P.rear/REAR_DAYS)*(365-t);
+        const nd = Array(nS+1).fill(0); for(let j=0;j<=nS;j++){ if(j<nS){ nd[j+1]+=dist[j]*ce.heiferP; nd[j]+=dist[j]*(1-ce.heiferP) } else nd[j]+=dist[j] } dist = nd;
+      } else { parts.calves += ce.ev*df; if(t<=365) next12 += ce.ev }
     }
     const e = dayEcon(c, lact, dim, {mods:withMods, dec:d}, P);
     const df = Math.pow(k, t/365);
@@ -569,38 +644,58 @@ function ltv(c, withMods, P=params(), dec){
     if(t<=365){ next12 += e.net; if(e.milking) uptime++ }
   }
   parts.salvage = 1300*Math.pow(k,t/365);
-  const total = parts.milk+parts.calves+parts.embryo+parts.salvage;
+  if(dist) parts.refund = dist.reduce((a,p,j)=>a+p*(nS-j),0)*(c.slotPaid||0)*Math.pow(k,t/365);
+  const total = Object.values(parts).reduce((a,b)=>a+b,0);
   return {total, parts, uptime: uptime/365, years: t/365, next12, lactLeft: Math.max(0,MAXL-c.lact) + (c.dim<=LACT ? (LACT-c.dim)/LACT : 0)};
 }
 function t12m(c, P=params()){
-  let lact=c.lact, dim=c.dim, net=0, calves=0, emb=0, L=0;
+  if(c.stage==='rearing'){ const n = -(P.rear/REAR_DAYS)*Math.min(365,c.age||0); return {net:n, milkNet:n, calves:0, emb:0, L:0, gross:0} }
+  let lact=c.lact, dim=c.dim, net=0, calves=0, emb=0, L=0, gross=0;
   for(let i=0;i<365;i++){
     const e = dayEcon(c,lact,dim,{noise:true},P);
-    net += e.net; L += e.L;
+    net += e.net; L += e.L; gross += e.gross;
     if(c.elite && e.milking) emb += embDaily(c)*CYCLE/LACT;
     dim--; if(dim<1){ lact--; dim=CYCLE; if(lact<1) break; calves += calfEV(c,CONV).ev }
   }
-  return {net: net+calves+emb, milkNet:net, calves, emb, L};
+  return {net: net+calves+emb, milkNet:net, calves, emb, L, gross: gross+calves+emb};
 }
 /* earnings-weighted DIM: how deep into lactation today's earnings are (analogue of Royalty Exchange 'Dollar Age') */
-function dimAge(cows){ let w=0,s=0; cows.forEach(c=>{const e=dayEcon(c,c.lact,c.dim,{mods:true}); if(e.net>0){w+=e.net; s+=e.net*c.dim}}); return w? s/w : 0 }
+function dimAge(cows){ let w=0,s=0; cows.forEach(c=>{ if(c.stage==='rearing') return; const e=dayEcon(c,c.lact,c.dim,{mods:true}); if(e.net>0){w+=e.net; s+=e.net*c.dim}}); return w? s/w : 0 }
 
 /* projection of P&L components for N days */
 function project(c, days, withMods, P=params()){
-  let lact=c.lact, dim=c.dim;
-  const r = {L:0, milk:0, calves:0, embryo:0, base:{feed:0,labour:0,vet:0,util:0,other:0,dry:0}, feedTop:0, supp:0, collar:0, semen:0, mgmt:0};
+  const r = {L:0, milk:0, calves:0, embryo:0, base:{feed:0,labour:0,vet:0,util:0,other:0,dry:0,rear:0}, feedTop:0, supp:0, collar:0, ins:0, semen:0, mgmt:0, newHeifers:0};
+  let lact=c.lact, dim=c.dim, age=c.age||0, rearing=c.stage==='rearing', cc=c, first=true;
+  let avail = Math.max(0,(c.slots||0)-(c.filled||0));
   if(withMods && c.owned && c.sireChoice) r.semen += calfEV(c,sireOf(c)).strawCost;
-  let first = true;
   for(let t=1;t<=days;t++){
-    dim++; if(dim>CYCLE){ lact++; dim=1; if(lact>MAXL) break; r.calves += calfEV(c, first && withMods ? sireOf(c) : CONV).ev; first=false }
-    const e = dayEcon(c,lact,dim,{mods:withMods},P);
+    let e;
+    if(rearing){
+      age++; e = dayEcon(c,0,0,{mods:withMods},P);
+      if(age>=REAR_DAYS){ rearing=false; lact=1; dim=0; cc={...c, stage:null}; r.calves += calfEV(cc,CONV).ev }
+    } else {
+      dim++;
+      if(dim>CYCLE){ lact++; dim=1; if(lact>MAXL) break;
+        const ce = calfEV(c, first ? sireOf(c) : CONV); first=false;
+        const keep = Math.min(1,avail)*ce.heiferP; avail = Math.max(0, avail-ce.heiferP);
+        r.calves += (ce.heiferP-keep)*ce.hv + (1-ce.heiferP)*ce.bv; r.newHeifers += keep; r.base.rear += keep*(P.rear/REAR_DAYS)*(days-t);
+      }
+      e = dayEcon(cc,lact,dim,{mods:withMods},P);
+    }
     r.L += e.L; r.milk += e.gross; r.mgmt += e.mgmt;
     for(const k in e.base) r.base[k] += e.base[k];
-    r.feedTop += e.direct.feedTop; r.supp += e.direct.supp; r.collar += e.direct.collar;
+    r.feedTop += e.direct.feedTop; r.supp += e.direct.supp; r.collar += e.direct.collar; r.ins += e.direct.ins;
     if(c.elite && e.milking) r.embryo += embDaily(c)*CYCLE/LACT;
   }
   return r;
 }
+/* the cow's state N days from now (for year-end trading-stock valuation) */
+function shifted(c, days){
+  if(c.stage==='rearing'){ const age=(c.age||0)+days; return age<REAR_DAYS ? {...c, age} : {...c, stage:null, lact:1, dim:age-REAR_DAYS} }
+  let lact=c.lact, dim=c.dim+days; while(dim>CYCLE){ dim-=CYCLE; lact++ }
+  return {...c, lact, dim, retired: lact>MAXL, sireChoice:null};
+}
+function marketValue(c){ if(c.retired) return 1300; if(c.isDaughter) return NI_VALUE; return Math.max(1300, ltv({...c, slots:0, filled:0}, false).total*0.8) }
 
 /* ============================================================
    RENDER: hide swatch avatar
@@ -660,10 +755,11 @@ function renderMarket(){
         <span class="pill">Lact ${c.lact}</span><span class="pill">${c.dim<=LACT?'DIM '+c.dim:'Dry · calves in '+(CYCLE-c.dim)+'d'}</span>
         <span class="pill">BPI ${c.bpi}</span><span class="pill">${c.cls}</span>
         ${c.elite?'<span class="pill elite">Elite · IVF embryos</span>':''}
+        <span class="pill">+ daughters from ${fmt$(pkgPrices(c).prices[0])}</span>
       </div>
-      <div class="today">${i.e.milking?`<b class="num">${i.e.L.toFixed(1)} L</b><span class="${alpha>=0?'pos':'neg'}">${pct(alpha)} vs herd-mates today</span>`:`<b class="num">0.0 L</b><span class="muted">dry period</span>`}</div>
+      <div class="today">${i.e.milking?`<b class="num">${i.e.L.toFixed(1)} L</b><span><span class="num">${fmt$(i.e.gross,2)}</span> gross today<br><span class="${alpha>=0?'pos':'neg'}">${pct(alpha)} vs herd-mates</span></span>`:`<b class="num">0.0 L</b><span class="muted">dry period</span>`}</div>
       <div class="kv3">
-        <div><span>T12M net</span><b>${fmt$(i.t.net)}</b></div>
+        <div><span>T12M gross</span><b>${fmtK(i.t.gross)}</b></div>
         <div><span>Moo-ltiple</span><b>${m>50?'>50':m.toFixed(1)}×</b></div>
         <div><span>LTV-L</span><b>${fmtK(i.l.total)}</b></div>
       </div>
@@ -686,59 +782,76 @@ function openCow(id){ openId=id; renderCow(); $('#drawer').classList.add('on'); 
 function closeCow(){ openId=null; $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on') }
 function renderCow(){
   if(!openId) return;
-  const c = S.cows.find(x=>x.id===openId); const au = S.auctions[c.id];
-  const e = cowToday(c), b = benchEcon(c,c.lact,c.dim), t = t12m(c), l = ltv(c,c.owned), price = c.owned ? c.paid : au.cur;
-  const fwd = price / l.next12;
-  const P = S.params;
-  const ownedEarn = c.hist.filter(h=>h.day>0).reduce((a,h)=>a+h.net,0);
+  const c = S.cows.find(x=>x.id===openId); if(!c){ closeCow(); return }
+  const au = S.auctions[c.id], P = S.params, rearing = c.stage==='rearing';
+  const e = cowToday(c), b = benchEcon(c,c.lact,c.dim), t = t12m(c), l = ltv(c,c.owned);
+  const price = c.owned ? (c.paid||0) : au.cur;
+  const mine = c.hist.filter(h=>h.day>0), ownedNet = mine.reduce((a,h)=>a+h.net,0), ownedGross = mine.reduce((a,h)=>a+(h.gross||0),0);
   const alpha = b.L>0 ? e.L/b.L-1 : 0;
   const cull = P.cull - (c.owned&&S.dec.collar?4:0);
   const ce = calfEV(c, sireOf(c));
+  const dam = c.damId && S.cows.find(x=>x.id===c.damId);
+  const m = price/t.net;
+  const tiles = rearing ? `
+      <div class="tile"><span>Age</span><b>${(c.age/30.4).toFixed(1)} mo</b><small>born into your herd</small></div>
+      <div class="tile"><span>First calving</span><b>${REAR_DAYS-c.age} days</b><small>then she starts milking</small></div>
+      <div class="tile"><span>Rearing cost/day</span><b>${fmt$(P.rear/REAR_DAYS,2)}</b><small>${fmt$(P.rear)} to first calving</small></div>
+      <div class="tile"><span>LTV-L</span><b>${fmtK(l.total)}</b><small>after rearing cost & losses</small></div>
+      <div class="tile"><span>Tax value</span><b>${fmt$(NI_VALUE)}</b><small>natural increase, cost election</small></div>
+      <div class="tile"><span>Rearing to date</span><b>${fmt$(P.rear/REAR_DAYS*c.age)}</b><small>deductible as incurred</small></div>
+      <div class="tile"><span>Sire</span><b style="font-size:13px">${esc(c.sire)}</b><small>BPI ${c.bpi}</small></div>
+      <div class="tile"><span>Survival to calving</span><b>${Math.round(Math.pow(REAR_SURVIVAL,(REAR_DAYS-c.age)/REAR_DAYS)*100)}%</b><small>rearing losses priced in</small></div>` : `
+      <div class="tile"><span>Today · gross</span><b>${fmt$(e.gross,2)}</b><small>${e.L.toFixed(1)} L · <span class="${alpha>=0?'pos':'neg'}">${e.milking?pct(alpha)+' vs herd':'dry'}</span></small></div>
+      <div class="tile"><span>Today · net</span><b>${fmt$(e.net,2)}</b><small>after farm costs & fees</small></div>
+      <div class="tile"><span>T12M gross</span><b>${fmtK(t.gross)}</b><small>net ${fmt$(t.net)} · ${fmtN(t.L)} L</small></div>
+      <div class="tile"><span>Moo-ltiple</span><b>${m>50||m<0?'>50':m.toFixed(1)}×</b><small>net · ${(price/t.gross).toFixed(2)}× gross</small></div>
+      <div class="tile"><span>LTV-L</span><b>${fmtK(l.total)}</b><small>${l.years.toFixed(1)} yrs of earnings left</small></div>
+      <div class="tile"><span>Udder Uptime</span><b>${Math.round(l.uptime*100)}%</b><small>days milking, next 12 mo</small></div>
+      <div class="tile"><span>Cull Churn</span><b>${cull}%/yr</b><small>${c.owned&&S.dec.collar?'collar −4 pts':'regional avg'}</small></div>
+      <div class="tile"><span>Moo-back</span><b>${l.next12>0?(price/(l.next12/12)).toFixed(0)+' mo':'—'}</b><small>payback at fwd net run-rate</small></div>`;
   $('#drawer').innerHTML = `<div class="d-in">
     <div class="d-head">${hideSVG(c)}<div>
       <div class="eyebrow">${c.breed} · ${esc(c.farm)}</div>
       <h2>${esc(c.name)}</h2>
-      <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="nlis" title="National Livestock Identification System tag">NLIS ${nlis(c)}</span>${c.elite?'<span class="pill elite">Elite · IVF embryos</span>':''}${c.owned?'<span class="pill good">In your herd</span>':''}</div>
+      <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="nlis" title="National Livestock Identification System tag">NLIS ${nlis(c)}</span>${c.elite?'<span class="pill elite">Elite · IVF embryos</span>':''}${rearing?'<span class="pill">Heifer · rearing</span>':''}${c.owned?'<span class="pill good">You own her</span>':''}${dam?`<button class="pill" data-cow="${dam.id}">Daughter of ${esc(dam.name)}</button>`:''}</div>
     </div><button class="btn btn-sm x" id="closeD" aria-label="Close">✕</button></div>
-
-    <div class="tiles">
-      <div class="tile"><span>Today</span><b>${e.L.toFixed(1)} L</b><small class="${alpha>=0?'pos':'neg'}">${e.milking?pct(alpha)+' vs herd-mates':'dry period'}</small></div>
-      <div class="tile"><span>T12M net</span><b>${fmt$(t.net)}</b><small>${fmtN(t.L)} L last 12 mo</small></div>
-      <div class="tile"><span>Moo-ltiple</span><b>${(price/t.net)>50?'>50':(price/t.net).toFixed(1)}×</b><small>fwd ${fwd.toFixed(1)}× next 12 mo</small></div>
-      <div class="tile"><span>LTV-L</span><b>${fmtK(l.total)}</b><small>${l.years.toFixed(1)} yrs of earnings left</small></div>
-      <div class="tile"><span>Udder Uptime</span><b>${Math.round(l.uptime*100)}%</b><small>days milking, next 12 mo</small></div>
-      <div class="tile"><span>Cull Churn</span><b>${cull}%/yr</b><small>${c.owned&&S.dec.collar?'collar −4 pts':'regional avg'}</small></div>
-      <div class="tile"><span>Coverage</span><b>${(l.total/price).toFixed(2)}×</b><small>LTV-L ÷ price</small></div>
-      <div class="tile"><span>Moo-back</span><b>${(price/(l.next12/12)).toFixed(0)} mo</b><small>payback at fwd run-rate</small></div>
-    </div>
-
-    <div class="panel">
+    <div class="tiles">${tiles}</div>
+    ${rearing ? `<div class="panel"><div class="panel-h"><h2>Rearing to first calving</h2><span class="muted">${Math.round(c.age/REAR_DAYS*100)}%</span></div>
+      <div class="left"><div class="bar" style="height:10px"><i style="width:${c.age/REAR_DAYS*100}%"></i></div><small><span>Born</span><span>Weaned 12 wk</span><span>Joined 15 mo</span><span>Calves 24 mo</span></small></div>
+      <p class="muted" style="margin:10px 0 0;font-size:13px">Heifers are reared on the farm's run-off block at about ${fmt$(P.rear/REAR_DAYS,2)}/day (milk replacer, weaning, agistment, vaccinations, joining). Those costs are deductible as they're incurred. At first calving she moves into milk and her calf is sold.</p></div>`
+    : `<div class="panel">
       <div class="panel-h"><h2>Lactation ${c.lact} curve</h2><span class="muted">litres/day by days in milk</span></div>
       <div class="legend"><span><i style="border-color:var(--series)"></i>Actual</span><span><i style="border-color:var(--series);border-top-style:dashed"></i>Projected</span><span><i style="border-color:var(--bench);border-top-style:dashed"></i>Herd-mate benchmark</span></div>
       <div class="chart" id="lactChart"></div>
-      ${c.owned&&S.dec.collar?`<div class="pills" style="margin-top:8px"><span class="pill good">Collar live</span><span class="pill">Rumination ${Math.round(470+nz(c.id,9,S.day)*400)} min/day</span><span class="pill">Activity ${Math.round(100+nz(c.id,8,S.day)*300)}% of baseline</span><span class="pill">Next heat ≈ day ${(c.dim<80?80-c.dim:21-((c.dim-80)%21))} from now</span></div>`:''}
-    </div>
+      ${c.owned&&S.dec.collar?`<div class="pills" style="margin-top:8px"><span class="pill good">Collar live</span><span class="pill">Rumination ${Math.round(470+nz(c.id,9,S.day)*400)} min/day</span><span class="pill">Activity ${Math.round(100+nz(c.id,8,S.day)*300)}% of baseline</span></div>`:''}
+    </div>`}
 
-    ${c.owned ? `<div class="bidbox"><div class="panel-h" style="margin:0"><h2>Your position</h2><span class="muted">since day ${c.boughtDay??'−30'}</span></div>
+    ${c.owned ? `<div class="bidbox"><div class="panel-h" style="margin:0"><h2>Your position</h2><span class="muted">${c.isDaughter?'natural increase':'since day '+(c.boughtDay??'−30')}</span></div>
       <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
-        <div class="tile"><span>Paid</span><b>${fmt$(c.paid)}</b></div>
-        <div class="tile"><span>Earned (in demo)</span><b class="pos">${fmt$(ownedEarn)}</b></div>
-        <div class="tile"><span>Next calf sire</span><b style="font-size:13px">${esc(sireOf(c).name)}</b><small>${Math.round(ce.heiferP*100)}% heifer chance</small></div>
+        <div class="tile"><span>Paid</span><b>${c.isDaughter?'—':fmt$(c.paid)}</b><small>${c.slots?'+ '+c.slots+' daughter slot'+(c.slots>1?'s':''):''}</small></div>
+        <div class="tile"><span>Earned (demo)</span><b class="pos">${fmt$(ownedGross)}</b><small>gross · net ${fmt$(ownedNet)}</small></div>
+        <div class="tile"><span>Next calf sire</span><b style="font-size:13px">${rearing?'—':esc(sireOf(c).name)}</b><small>${rearing?'joins at 15 months':Math.round(ce.heiferP*100)+'% heifer chance'}</small></div>
       </div></div>` : bidBox(c,au)}
 
-    <div class="panel">
+    ${c.owned && !rearing ? daughterPanel(c) : ''}
+
+    ${rearing ? '' : `<div class="panel">
       <h2>How today's cheque is built</h2>
       <div class="math">${e.L.toFixed(1)} L × 1.03 kg/L × (${e.fat.toFixed(2)}% fat + ${e.prot.toFixed(2)}% protein) = <b>${e.kgMS.toFixed(2)} kg MS</b><br>
       ${e.kgMS.toFixed(2)} kg MS × A$${P.price.toFixed(2)}/kg MS = <b>${fmt$(e.gross,2)} gross</b> (${e.L>0?(e.gross/e.L*100).toFixed(0):0}¢/L)<br>
-      − operating costs ${fmt$(Object.values(e.base).reduce((a,b)=>a+b,0),2)} − decisions ${fmt$(e.direct.feedTop+e.direct.supp+e.direct.collar,2)} − mgmt fee ${fmt$(e.mgmt,2)} = <b>${fmt$(e.net,2)} net</b></div>
-    </div>
+      − farm costs ${fmt$(Object.values(e.base).reduce((a,b)=>a+b,0),2)} − decisions ${fmt$(e.direct.feedTop+e.direct.supp+e.direct.collar,2)} − insurance ${fmt$(e.direct.ins,2)} − mgmt fee ${fmt$(e.mgmt,2)} = <b>${fmt$(e.net,2)} net</b><br>
+      <span class="muted">≈ ${fmt$(e.net*(1-margRate(P.income)),2)} after tax at your ${Math.round(margRate(P.income)*100)}% marginal rate</span></div>
+    </div>`}
 
     <div class="panel">
       <h2>What LTV-L is made of</h2>
       <div class="tbl-wrap"><table>
         <tr><th>Component</th><th class="r">Present value</th><th>Basis</th></tr>
-        <tr><td>Milk (net)</td><td class="r num">${fmt$(l.parts.milk)}</td><td class="muted">remaining ${l.lactLeft.toFixed(1)} lactations on a Wood curve, 305 days in milk + 60 dry</td></tr>
-        <tr><td>Calves</td><td class="r num">${fmt$(l.parts.calves)}</td><td class="muted">${c.elite?'retained daughters valued at first calving':'heifer calves ≈ '+fmt$(calfEV(c,CONV).hv)+', bull calves '+fmt$(90)}</td></tr>
+        ${l.parts.rearing?`<tr><td>Rearing still to pay</td><td class="r num">${fmt$(l.parts.rearing)}</td><td class="muted">${REAR_DAYS-c.age} days × ${fmt$(P.rear/REAR_DAYS,2)}</td></tr>`:''}
+        <tr><td>Milk (net)</td><td class="r num">${fmt$(l.parts.milk)}</td><td class="muted">${rearing?'from first calving, ':'remaining '+l.lactLeft.toFixed(1)+' lactations, '}Wood curve, 305 days in milk + 60 dry</td></tr>
+        <tr><td>Calves sold</td><td class="r num">${fmt$(l.parts.calves)}</td><td class="muted">heifer calves ≈ ${fmt$(calfEV(c,CONV).hv)}, bull calves ${fmt$(90)}</td></tr>
+        ${l.parts.daughters?`<tr><td>Daughters kept</td><td class="r num">${fmt$(l.parts.daughters)}</td><td class="muted">${c.slots-c.filled} open slot(s): each daughter's milking life less ${fmt$(P.rear)} rearing</td></tr>`:''}
+        ${l.parts.refund?`<tr><td>Slot refunds</td><td class="r num">${fmt$(l.parts.refund)}</td><td class="muted">unfilled slots refunded at cost when she retires</td></tr>`:''}
         ${c.elite?`<tr><td>IVF embryos</td><td class="r num">${fmt$(l.parts.embryo)}</td><td class="muted">~12 grade-1 embryos/yr × ${fmt$(700+(c.bpi-300)*3)}, 50% net of OPU/IVF costs</td></tr>`:''}
         <tr><td>Salvage (cull cow)</td><td class="r num">${fmt$(l.parts.salvage)}</td><td class="muted">≈ A$1,300 at the end of her productive life</td></tr>
         <tr><td><b>LTV-L</b></td><td class="r num"><b>${fmt$(l.total)}</b></td><td class="muted">discounted at ${P.disc}% and ${cull}% annual cull risk</td></tr>
@@ -750,27 +863,54 @@ function renderCow(){
       <div class="gen">
         <div><span>Sire</span><b>${esc(c.sire)}</b></div><div><span>Dam</span><b>${esc(c.dam)}</b></div>
         <div><span>Balanced Performance Index</span><b class="num">${c.bpi}</b></div><div><span>Classification</span><b>${c.cls}</b></div>
-        <div><span>Fat / Protein</span><b class="num">${c.fat.toFixed(1)}% / ${c.prot.toFixed(1)}%</b></div><div><span>Peak yield (this lact.)</span><b class="num">${cowPeak(c,c.lact).toFixed(1)} L</b></div>
-        <div><span>Lactation</span><b>${c.lact} of ~${MAXL}</b></div><div><span>Region</span><b>${esc(c.region)}</b></div>
+        <div><span>Fat / Protein</span><b class="num">${c.fat.toFixed(1)}% / ${c.prot.toFixed(1)}%</b></div><div><span>Peak yield (${rearing?'1st lact.':'this lact.'})</span><b class="num">${cowPeak(c,Math.max(1,c.lact)).toFixed(1)} L</b></div>
+        <div><span>Lactation</span><b>${rearing?'heifer':c.lact+' of ~'+MAXL}</b></div><div><span>Region</span><b>${esc(c.region)}</b></div>
       </div>
-      ${c.calves.length?`<h3 style="font-size:14px;margin:12px 0 6px">Calves born in your herd</h3><div class="pills">${c.calves.map(k=>`<span class="pill ${k.sex==='Heifer'?'good':''}">${k.sex} · day ${k.day} · ${fmt$(k.value)}</span>`).join('')}</div>`:''}
+      ${c.calves.length?`<h3 style="font-size:14px;margin:12px 0 6px">Calves born in your herd</h3><div class="pills">${c.calves.map(k=>`<span class="pill ${k.sex==='Heifer'?'good':''}">${k.sex}${k.kept?' · kept':''} · day ${k.day}${k.kept?'':' · '+fmt$(k.value)}</span>`).join('')}</div>`:''}
     </div>
   </div>`;
-  lactChart($('#lactChart'), c);
+  if(!rearing) lactChart($('#lactChart'), c);
   tickCountdowns();
 }
+function daughterPanel(c){
+  const open = c.slots - c.filled, st = slotStats(c, open+1), next = nextSlotPrice(c), canExtend = calvings(c).length>0 && c.slots<4;
+  const ds = (c.daughters||[]).map(id=>S.cows.find(x=>x.id===id)).filter(Boolean);
+  const rows = ds.map(d=>`<button class="opt" data-cow="${d.id}" aria-pressed="false"><span class="radio" style="background:var(--good);border-color:var(--good)"></span><span><b>${esc(d.name)}</b><small>${d.stage==='rearing'?'Rearing · first calving in '+(REAR_DAYS-d.age)+' days':d.retired?'Retired':'Milking · lactation '+d.lact}</small></span><span class="imp">filled</span></button>`).join('')
+    + Array.from({length:open},(_,j)=>`<div class="opt" style="cursor:default"><span class="radio"></span><span><b>Open slot ${c.filled+j+1}</b><small>${Math.round(st.pFill[j]*100)}% odds of filling · ~${Math.max(1,Math.round(st.eta[j]/30.4))} months out</small></span><span class="imp muted">waiting</span></div>`).join('');
+  return `<div class="panel"><div class="panel-h"><h2>Daughter rights</h2><span class="muted">${c.filled} of ${c.slots} filled</span></div>
+    <p class="muted" style="margin:0 0 10px;font-size:13px">Each slot keeps her next heifer calf in your herd instead of selling it. You fund rearing (${fmt$(S.params.rear)} over 24 months) and own the daughter's milk cheque for life. Unfilled slots are refunded at cost when she retires.</p>
+    <div class="opts">${rows || '<p class="muted" style="margin:0">No daughter slots yet.</p>'}</div>
+    ${canExtend?`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px"><button class="btn btn-primary btn-sm" id="extendSlot">Add a daughter slot · ${fmt$(next)}</button><span class="muted" style="font-size:12px">worth ≈ ${fmt$(st.vals[open])} vs selling the calf · ${Math.round(st.pFill[open]*100)}% odds of filling</span></div>`:''}
+  </div>`;
+}
+function extendSlot(){
+  const c = S.cows.find(x=>x.id===openId); const price = nextSlotPrice(c);
+  if(price > S.wallet) return toast(`You need ${fmt$(price)} in your wallet.`);
+  c.slotPaid = (c.slotPaid*c.slots + price)/(c.slots+1); c.slots++; S.wallet -= price;
+  log('🎟️', `Extended ${esc(c.name)}'s daughter package to ${c.slots} slots for ${fmt$(price)}.`);
+  save(); renderAll(); toast(`Daughter slot ${c.slots} added.`);
+}
 function minInc(cur){ return Math.max(100, round50(cur*0.025)) }
+const pkgSel = {};
+function pkgPrices(c){ const st = slotStats(c,3); return {st, prices: st.vals.map(v=>Math.max(150, round50(v*0.9)))} }
 function bidBox(c, au){
   if(au.status!=='live') return `<div class="bidbox"><h2>Auction closed</h2><p class="muted" style="margin:0">${au.status==='won'?'You won this auction.':'Sold to '+esc(au.leader)+' for '+fmt$(au.cur)+'.'}</p></div>`;
   const next = au.cur + minInc(au.cur);
+  const sel = pkgSel[c.id] ?? au.pkg ?? 0;
+  const {st, prices} = pkgPrices(c);
+  const cum = n => prices.slice(0,n).reduce((a,b)=>a+b,0);
   return `<div class="bidbox">
     <div class="panel-h" style="margin:0"><h2>Place a bid</h2><span class="cd" data-ends="${au.endsAt}"></span></div>
     <div style="display:flex;gap:18px;flex-wrap:wrap">
-      <div><div class="eyebrow">Current bid</div><b class="num" style="font-size:24px">${fmt$(au.cur)}</b> <span class="${au.leader==='you'?'lead-you':'muted'}">${au.leader==='you'?'you lead':'by '+esc(au.leader)}</span></div>
-      <div><div class="eyebrow">Implied yield (T12M)</div><b class="num" style="font-size:24px">${(t12m(c).net/au.cur*100).toFixed(1)}%</b></div>
+      <div><div class="eyebrow">Current bid · cow</div><b class="num" style="font-size:24px">${fmt$(au.cur)}</b> <span class="${au.leader==='you'?'lead-you':'muted'}">${au.leader==='you'?'you lead':'by '+esc(au.leader)}</span></div>
+      <div><div class="eyebrow">Gross yield (T12M)</div><b class="num" style="font-size:24px">${(t12m(c).gross/au.cur*100).toFixed(0)}%</b></div>
+      <div><div class="eyebrow">Net yield</div><b class="num" style="font-size:24px">${(t12m(c).net/au.cur*100).toFixed(1)}%</b></div>
+    </div>
+    <div><div class="eyebrow" style="margin-bottom:6px">Daughter package · fixed price, added if you win</div>
+      <div class="opts">${[0,1,2,3].map(n=>`<button class="opt" data-pkg="${n}" aria-pressed="${sel===n}"><span class="radio"></span><span><b>${n?`Cow + ${n} daughter${n>1?'s':''}`:'Cow only'}</b><small>${n?`slot ${n}: ${Math.round(st.pFill[n-1]*100)}% odds of filling · worth ≈ ${fmt$(st.vals[n-1])} vs selling the calf`:'heifer calves are sold, cash to you'}</small></span><span class="imp">${n?'+'+fmt$(cum(n)):'—'}</span></button>`).join('')}</div>
     </div>
     <form class="bidrow" id="bidForm">
-      <label class="muted" for="bidAmt" style="flex-basis:100%;font-size:12px">Minimum ${fmt$(next)} · wallet ${fmt$(S.wallet)} · bids in the last 60 s extend the auction</label>
+      <label class="muted" for="bidAmt" style="flex-basis:100%;font-size:12px">Minimum ${fmt$(next)} · if you win you pay bid + ${fmt$(cum(sel))} package · wallet ${fmt$(S.wallet)} · bids in the last 60 s extend the auction</label>
       <input id="bidAmt" inputmode="numeric" value="${next}" aria-label="Bid amount in A$">
       <button class="btn btn-primary" type="submit">Bid</button>
       <button class="btn" type="button" id="quickBid">Bid ${fmt$(next)}</button>
@@ -780,13 +920,15 @@ function bidBox(c, au){
 }
 function placeBid(id, amt){
   const au = S.auctions[id]; if(!au || au.status!=='live') return;
+  const c = S.cows.find(x=>x.id===id);
   const need = au.cur + minInc(au.cur);
+  const n = pkgSel[id] ?? au.pkg ?? 0, pk = pkgPrices(c).prices.slice(0,n).reduce((a,b)=>a+b,0);
   if(!(amt>=need)) return toast(`Bid at least ${fmt$(need)}.`);
-  if(amt > S.wallet) return toast(`That's more than your wallet (${fmt$(S.wallet)}). Lower the bid or sell a holding.`);
-  au.cur = round50(amt); au.leader='you'; au.bids.push({who:'you', amt:au.cur, day:S.day});
+  if(amt + pk > S.wallet) return toast(`Bid plus package is more than your wallet (${fmt$(S.wallet)}).`);
+  au.cur = round50(amt); au.leader='you'; au.bids.push({who:'you', amt:au.cur, day:S.day}); au.pkg = n; au.pkgPrice = pk;
   if(au.endsAt - Date.now() < 60000) au.endsAt = Date.now()+60000;
   S.badges.firstBid = S.badges.firstBid || S.day+1;
-  save(); toast(`Bid placed: ${fmt$(au.cur)}. You lead.`); renderAll();
+  save(); toast(`Bid placed: ${fmt$(au.cur)}${n?` + ${n}-daughter package`:''}. You lead.`); renderAll();
 }
 
 /* ============================================================
@@ -841,30 +983,30 @@ function lactChart(el, c){
 function earnChart(el){
   const data = S.hist.slice(-30);
   const W=640,H=210,pl=40,pr=10,pt=10,pb=24, iw=W-pl-pr, ih=H-pt-pb;
-  const vals = data.flatMap(d=>[d.net,d.bench]);
+  const vals = data.flatMap(d=>[d.net, d.gross||0, d.bench]);
   const lo = Math.min(0,...vals), hi = Math.max(...vals);
-  const step = hi>60?20:10; const ymax = niceMax(hi*1.1,step), ymin = lo<0 ? -niceMax(-lo,step) : 0;
+  const step = hi>60?20:10; const ymax = niceMax(hi*1.08,step), ymin = lo<0 ? -niceMax(-lo,step) : 0;
   const y = v => pt + ih - (v-ymin)/(ymax-ymin)*ih;
   const bw = iw/data.length;
   let g=''; for(let v=ymin; v<=ymax; v+=step){ g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y(v)+3.5}" text-anchor="end">${v<0?'−':''}$${Math.abs(v)}</text>` }
   let bars='', hits='';
   data.forEach((d,i)=>{
-    const x0 = pl+i*bw+1, w=Math.max(2,bw-2), top=y(Math.max(0,d.net)), bot=y(Math.min(0,d.net));
-    const beat = d.net>=d.bench;
-    bars += `<rect x="${x0}" y="${top}" width="${w}" height="${Math.max(1,bot-top)}" rx="2" fill="var(--series)" opacity="${d.day>0?1:.55}"/>`;
-    if(beat && d.day>0) bars += `<circle cx="${x0+w/2}" cy="${top-5}" r="2" fill="var(--gold)"/>`;
+    const x0 = pl+i*bw+1, w=Math.max(2,bw-2), op = d.day>0?1:.55;
+    const gt = y(d.gross||0), nt = y(Math.max(0,d.net)), nb = y(Math.min(0,d.net));
+    bars += `<rect x="${x0}" y="${gt}" width="${w}" height="${Math.max(0,y(0)-gt)}" rx="2" fill="var(--series)" opacity="${.22*op}"/>`;
+    bars += `<rect x="${x0}" y="${nt}" width="${w}" height="${Math.max(1,nb-nt)}" rx="2" fill="${d.net<0?'var(--bad)':'var(--series)'}" opacity="${op}"/>`;
+    if(d.net>=d.bench && d.day>0) bars += `<circle cx="${x0+w/2}" cy="${gt-5}" r="2" fill="var(--gold)"/>`;
     hits += `<rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${ih}" fill="transparent" data-i="${i}"/>`;
   });
   const bl = data.map((d,i)=>(i?'L':'M')+(pl+i*bw+bw/2).toFixed(1)+' '+y(d.bench).toFixed(1)).join('');
   let xt=''; data.forEach((d,i)=>{ if(i%7===0||(i===data.length-1&&i%7>3)){ const dt=dateOf(d.day); xt+=`<text x="${pl+i*bw+bw/2}" y="${H-6}" text-anchor="middle">${dt.getDate()} ${dt.toLocaleString('en-AU',{month:'short'})}</text>` }});
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily net earnings, last 30 days">${g}${bars}<path d="${bl}" fill="none" stroke="var(--bench)" stroke-width="1.5" stroke-dasharray="4 4"/>${xt}${hits}</svg>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily gross and net earnings, last 30 days">${g}${bars}<path d="${bl}" fill="none" stroke="var(--bench)" stroke-width="1.5" stroke-dasharray="4 4"/>${xt}${hits}</svg>`;
   el.querySelectorAll('[data-i]').forEach(r=>{
     r.addEventListener('pointermove', ev=>{ const d=data[+r.dataset.i]; const dt=dateOf(d.day);
-      showTip(ev, `${dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}${d.day<=0?' · before demo':''}<br>Net <b>${fmt$(d.net,2)}</b> · ${fmtN(d.L,1)} L<br>Benchmark <b>${fmt$(d.bench,2)}</b> ${d.net>=d.bench?'<br>★ beat the herd':''}`) });
+      showTip(ev, `${dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}${d.day<=0?' · before demo':''}<br>Gross <b>${fmt$(d.gross||0,2)}</b> · ${fmtN(d.L,1)} L<br>Net <b>${fmt$(d.net,2)}</b> · benchmark ${fmt$(d.bench,2)}${d.net>=d.bench?'<br>★ beat the herd':''}`) });
     r.addEventListener('pointerleave', hideTip);
   });
 }
-
 function wfChart(el, rows){ // rows: [{label, v, kind:'rev'|'cost'|'net'}]
   const W=640, rowH=26, pl=170, pr=70, pt=6, H=pt+rows.length*rowH+18, iw=W-pl-pr;
   let run=0; const segs = rows.map(r=>{ if(r.kind==='net'){ return {...r, a:0, b:r.v} } const a=run; run += r.kind==='cost'?-r.v:r.v; return {...r, a, b:run} });
@@ -891,52 +1033,58 @@ function wfChart(el, rows){ // rows: [{label, v, kind:'rev'|'cost'|'net'}]
    HERD
    ============================================================ */
 function owned(){ return S.cows.filter(c=>c.owned && !c.retired) }
+function deductibles(cows, P=S.params){ // next-12-month deductible spend
+  let d=0; cows.forEach(c=>{ const r=project(c,365,true,P); d += Object.values(r.base).reduce((a,b)=>a+b,0)+r.feedTop+r.supp+r.collar+r.ins+r.semen+r.mgmt }); return d;
+}
 function herdMetrics(){
-  const os = owned(); const last30 = S.hist.slice(-30);
-  const net30 = last30.reduce((a,d)=>a+d.net,0), L30 = last30.reduce((a,d)=>a+d.L,0), b30 = last30.reduce((a,d)=>a+d.bench,0);
-  const MRM = net30/last30.length*30.4, ARL = L30/last30.length*365;
+  const os = owned(); const last30 = S.hist.slice(-30), n = last30.length||1;
+  const net30 = last30.reduce((a,d)=>a+d.net,0), g30 = last30.reduce((a,d)=>a+(d.gross||0),0), b30 = last30.reduce((a,d)=>a+d.bench,0);
   const lt = os.map(c=>({c, l:ltv(c,true), t:t12m(c)}));
-  const LTV = lt.reduce((a,x)=>a+x.l.total,0), T12 = lt.reduce((a,x)=>a+x.t.net,0), paid = os.reduce((a,c)=>a+c.paid,0);
-  const today = S.hist[S.hist.length-1];
-  const upt = lt.reduce((a,x)=>a+x.l.uptime,0)/(lt.length||1);
-  const alpha7 = (()=>{ const w=S.hist.slice(-7); const n=w.reduce((a,d)=>a+d.net,0), b=w.reduce((a,d)=>a+d.bench,0); return b>0? n/b-1 : 0 })();
-  const cull = S.params.cull - (S.dec.collar?4:0);
-  return {os, MRM, ARL, LTV, T12, paid, today, upt, alpha7, cull, mult: paid/T12, alpha30: b30>0?net30/b30-1:0, dimAge: dimAge(os), lt};
+  const cowsOnly = lt.filter(x=>!x.c.isDaughter);
+  const LTV = lt.reduce((a,x)=>a+x.l.total,0), T12 = cowsOnly.reduce((a,x)=>a+x.t.net,0), paid = os.reduce((a,c)=>a+(c.paid||0),0);
+  const alpha7 = (()=>{ const w=S.hist.slice(-7); const a=w.reduce((s,d)=>s+d.net,0), b=w.reduce((s,d)=>s+d.bench,0); return b>0? a/b-1 : 0 })();
+  const slots = os.reduce((a,c)=>a+(c.slots||0),0), filled = os.reduce((a,c)=>a+(c.filled||0),0);
+  const rearing = os.filter(c=>c.stage==='rearing');
+  const nextCalve = rearing.length ? Math.min(...rearing.map(c=>REAR_DAYS-c.age)) : null;
+  const rate = margRate(S.params.income);
+  return {os, lt, LTV, T12, paid, today:S.hist[S.hist.length-1], alpha7, alpha30: b30>0?net30/b30-1:0, mult: paid/T12,
+    gMRM: g30/n*30.4, nMRM: net30/n*30.4, dimAge: dimAge(os), slots, filled, rearing, nextCalve, rate, shield: deductibles(os)*rate};
 }
 function renderHerd(){
   const m = herdMetrics(); const d = dateOf(S.day);
-  const earned = S.hist.filter(h=>h.day>0).reduce((a,h)=>a+h.net,0);
+  const mine = S.hist.filter(h=>h.day>0), earnedG = mine.reduce((a,h)=>a+(h.gross||0),0), earnedN = mine.reduce((a,h)=>a+h.net,0);
   const t = m.today; const beat = t.net >= t.bench;
   $('#herdDrop').innerHTML = `<div class="drop">
     <div>
       <div class="lbl">Today's Milk Drop · ${d.toLocaleDateString('en-AU',{weekday:'long', day:'numeric', month:'short'})}</div>
-      <div class="big num">${fmt$(t.net,2)}</div>
-      <div class="streak">${beat?'▲ beat the herd today':'▼ behind the herd today'} · ${S.alphaStreak}-day alpha streak (best ${S.bestAlpha})</div>
+      <div class="big num">${fmt$(t.gross||0,2)}</div>
+      <div class="streak">gross milk cheque · ${beat?'▲ beat the herd':'▼ behind the herd'} · ${S.alphaStreak}-day streak (best ${S.bestAlpha})</div>
     </div>
     <div class="drop-stats">
+      <div><b>${fmt$(t.net,2)}</b><span>net after farm costs</span></div>
+      <div><b>${fmt$(t.net>0?t.net*(1-m.rate):t.net,2)}</b><span>after tax at ${Math.round(m.rate*100)}%</span></div>
       <div><b>${fmtN(t.L,1)} L</b><span>shipped today</span></div>
-      <div><b>${pct(t.bench>0?t.net/t.bench-1:0,1)}</b><span>vs herd-mate benchmark</span></div>
-      <div><b>${fmt$(earned)}</b><span>earned since day 1</span></div>
-      <div><b>${S.checkins}</b><span>days checked in</span></div>
+      <div><b>${fmt$(earnedG)}</b><span>gross since day 1 · net ${fmt$(earnedN)}</span></div>
     </div>
   </div>`;
   const kp = [
-    ['MRM', fmt$(m.MRM), 'Monthly Recurring Milk: net A$ at your 30-day run-rate', 'Monthly Recurring Milk: your herd\'s net income per month, projected from the last 30 days.'],
-    ['ARL', fmtN(m.ARL)+' L', 'Annual Run-rate Litres', 'Annual Run-rate Litres: litres your cows would ship over a year at the current 30-day pace.'],
-    ['LTV-L', fmtK(m.LTV), `Lifetime Value Left · ${(m.LTV/m.paid).toFixed(2)}× what you paid`, 'Lifetime Value Left: discounted net earnings still ahead (milk, calves, embryos, salvage), after cull risk.'],
+    ['Gross MRM', fmt$(m.gMRM), 'Monthly Recurring Milk, gross', 'Gross Monthly Recurring Milk: your herd\'s milk cheque per month at the last 30 days\' pace, before costs.'],
+    ['Net MRM', fmt$(m.nMRM), `≈ ${fmt$(m.nMRM>0?m.nMRM*(1-m.rate):m.nMRM)} after tax`, 'Net Monthly Recurring Milk: what\'s left each month after farm costs, rearing, insurance and fees.'],
+    ['LTV-L', fmtK(m.LTV), `Lifetime Value Left · ${(m.LTV/m.paid).toFixed(2)}× paid`, 'Lifetime Value Left: discounted net earnings still ahead (milk, calves, daughters, embryos, salvage), after cull risk.'],
     ['Moo-ltiple', m.mult.toFixed(1)+'×', 'price paid ÷ trailing 12-mo net', 'Moo-ltiple: what you paid divided by trailing 12-month net earnings, the same idea as a royalty multiple.'],
     ['Herd Alpha', pct(m.alpha7,1), `7-day · 30-day ${pct(m.alpha30,1)}`, 'Herd Alpha: how much more (or less) your cows earned than average herd-mates at the same stage of lactation.'],
+    ['Daughter Pipeline', `${m.filled}/${m.slots}`, m.rearing.length?`${m.rearing.length} rearing · next calves in ${m.nextCalve}d`:'slots filled', 'Daughter Pipeline: daughter slots filled out of those you hold, and heifers being reared toward their first calving.'],
+    ['Tax Shield', fmt$(m.shield), `deductions × ${Math.round(m.rate*100)}% over 12 mo`, 'Tax Shield: next 12 months of deductible farm costs (feed, labour, rearing, insurance, fees) times your marginal rate. Set your income in the P&L Lab.'],
     ['DIM Age', Math.round(m.dimAge)+' days', 'earnings-weighted days in milk', 'DIM Age: how far into their lactations your earnings come from, weighted by today\'s net. Like Royalty Exchange\'s "dollar age": lower means fresher, longer-running income.'],
-    ['Udder Uptime', Math.round(m.upt*100)+'%', 'share of next 12 mo in milk', 'Udder Uptime: the share of the next 12 months your cows will be milking rather than dry.'],
-    ['Cull Churn', m.cull+'%/yr', S.dec.collar?'collar lowers risk by 4 pts':'regional average', 'Cull Churn: annual chance a cow leaves the herd early (mastitis, lameness, infertility). Priced into LTV-L.'],
   ];
   $('#herdKpis').innerHTML = kp.map(([k,v,dsc,help])=>`<div class="kpi"><div class="k"><b>${k}</b><button class="info" aria-label="What is ${k}?" data-help="${esc(help)}">i</button></div><div class="v">${v}</div><div class="d">${dsc}</div></div>`).join('');
-  $('#holdSub').textContent = `${m.os.length} cows · ${fmt$(m.paid)} invested`;
-  $('#holdTbl').innerHTML = `<tr><th>Cow</th><th class="r">Today</th><th class="r">vs herd</th><th class="r">Net today</th><th class="r">LTV-L</th><th>Lactation left</th><th class="r">Earned</th></tr>` +
-    m.lt.map(({c,l})=>{ const e=cowToday(c), b=benchEcon(c,c.lact,c.dim), a = b.L>0?e.L/b.L-1:0; const earned=c.hist.filter(h=>h.day>0).reduce((s,h)=>s+h.net,0);
-      return `<tr class="click" data-cow="${c.id}"><td><div class="cowcell">${hideSVG(c)}<div><b>${esc(c.name)}</b><small>${c.breed} · Lact ${c.lact} · ${c.dim<=LACT?'DIM '+c.dim:'dry'}</small></div></div></td>
-      <td class="r num">${e.L.toFixed(1)} L</td><td class="r num ${a>=0?'pos':'neg'}">${e.milking?pct(a):'—'}</td><td class="r num">${fmt$(e.net,2)}</td><td class="r num">${fmtK(l.total)}</td>
-      <td><div class="minibar"><i style="width:${Math.min(100,l.lactLeft/MAXL*100)}%"></i></div></td><td class="r num pos">${fmt$(earned)}</td></tr>` }).join('');
+  $('#holdSub').textContent = `${m.os.length} animals · ${fmt$(m.paid)} invested`;
+  $('#holdTbl').innerHTML = `<tr><th>Animal</th><th class="r">Gross today</th><th class="r">Net today</th><th class="r">vs herd</th><th class="r">LTV-L</th><th>Daughters</th><th class="r">Earned</th></tr>` +
+    m.lt.map(({c,l})=>{ const e=cowToday(c), b=benchEcon(c,c.lact,c.dim), a = b.L>0?e.L/b.L-1:0; const earned=c.hist.filter(h=>h.day>0).reduce((s,h)=>s+(h.gross||0),0);
+      const sub = c.stage==='rearing' ? `Heifer · first calving in ${REAR_DAYS-c.age}d` : `${c.breed} · Lact ${c.lact} · ${c.dim<=LACT?'DIM '+c.dim:'dry'}`;
+      return `<tr class="click" data-cow="${c.id}"><td><div class="cowcell">${hideSVG(c)}<div><b>${esc(c.name)}</b><small>${sub}</small></div></div></td>
+      <td class="r num">${c.stage==='rearing'?'—':fmt$(e.gross,2)}<br><small class="muted">${e.L.toFixed(1)} L</small></td><td class="r num ${e.net<0?'neg':''}">${fmt$(e.net,2)}</td><td class="r num ${a>=0?'pos':'neg'}">${e.milking?pct(a):'—'}</td><td class="r num">${fmtK(l.total)}</td>
+      <td>${c.slots?`<span class="pill ${c.filled?'good':''}">${c.filled}/${c.slots}</span>`:c.isDaughter?'<span class="pill">daughter</span>':'<span class="muted">—</span>'}</td><td class="r num pos">${fmt$(earned)}</td></tr>` }).join('');
   earnChart($('#earnChart'));
   $('#feed').innerHTML = S.events.slice().reverse().slice(0,40).map(ev=>`<div class="ev"><span class="ic" aria-hidden="true">${ev.ic}</span><span>${ev.t}</span><small>${ev.day<=0?'Start':dateOf(ev.day).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</small></div>`).join('');
   renderDecisions();
@@ -1030,6 +1178,7 @@ const BADGES = [
   ['genNerd','BPI','Genomics Nerd','Pick the genomic young sire'],
   ['dataCow','IoT','Data Cow','Subscribe to collars'],
   ['tenK','10k','10,000 L Club','Ship 10,000 L since day 1'],
+  ['dynasty','D','Dynasty','A daughter from your package reaches first calving'],
 ];
 function renderBadges(){
   const L = S.hist.filter(h=>h.day>0).reduce((a,h)=>a+h.L,0); if(L>=10000) S.badges.tenK = S.badges.tenK||S.day;
@@ -1038,67 +1187,87 @@ function renderBadges(){
 function renderLeader(m){
   const r = rng(hash('lb'+Math.floor(S.day/7)));
   const rows = BOTS.slice(0,6).map(h=>({h, a: (r()-0.35)*0.22, mrm: 400+r()*2600}));
-  rows.push({h:'You', a:m.alpha7, mrm:m.MRM, me:true});
+  rows.push({h:'You', a:m.alpha7, mrm:m.nMRM, me:true});
   rows.sort((a,b)=>b.a-a.a);
-  $('#leader').innerHTML = `<tr><th>#</th><th>Investor</th><th class="r">Herd Alpha</th><th class="r">MRM</th></tr>` + rows.map((x,i)=>`<tr class="${x.me?'me':''}"><td class="num">${i+1}</td><td>${esc(x.h)}</td><td class="r num ${x.a>=0?'pos':'neg'}">${pct(x.a,1)}</td><td class="r num">${fmt$(x.mrm)}</td></tr>`).join('');
+  $('#leader').innerHTML = `<tr><th>#</th><th>Investor</th><th class="r">Herd Alpha</th><th class="r">Net MRM</th></tr>` + rows.map((x,i)=>`<tr class="${x.me?'me':''}"><td class="num">${i+1}</td><td>${esc(x.h)}</td><td class="r num ${x.a>=0?'pos':'neg'}">${pct(x.a,1)}</td><td class="r num">${fmt$(x.mrm)}</td></tr>`).join('');
 }
 
 /* ============================================================
    DAY ENGINE
    ============================================================ */
 function log(ic,t){ S.events.push({day:S.day, ic, t}) }
-function advanceDay(silent){
+function advanceDay(){
   S.day++; S.checkins++;
   const r = rng(hash('day'+S.day));
   const drop = {day:S.day, rows:[], events:[]};
-  let L=0, net=0, bench=0;
+  let L=0, net=0, bench=0, gross=0;
+  const say = (ic,m)=>{ log(ic,m); drop.events.push(m) };
   S.cows.forEach(c=>{
     if(c.retired) return;
+    let extra = 0;   // one-off revenue today: calf sales, embryos, salvage, refunds
+    if(c.stage==='rearing'){
+      if(!c.owned) return;
+      c.age++;
+      if(r() < 1-Math.pow(REAR_SURVIVAL,1/REAR_DAYS)){ c.retired=true; c.lost=true; say('🕯️', `${esc(c.name)} was lost during rearing. Rearing costs to date stay deductible.`); return }
+      const e = dayEcon(c,0,0,{mods:true});
+      if(c.age>=REAR_DAYS){ c.stage=null; c.lact=1; c.dim=1; const cv=calfEV(c,CONV); extra += cv.bv; c.calves.push({day:S.day, sex:'Bull', value:cv.bv}); S.badges.dynasty = S.badges.dynasty||S.day;
+        say('🥛', `${esc(c.name)} calved for the first time and is now <b>in milk</b>. Her calf sold for ${fmt$(cv.bv)}.`) }
+      c.hist.push({day:S.day, L:0, net:e.net+extra, gross:extra}); net+=e.net+extra; gross+=extra; bench+=e.net;
+      drop.rows.push({c, L:0, net:e.net+extra, gross:extra, alpha:0, rearing:c.stage==='rearing'});
+      return;
+    }
     c.dim++;
-    if(c.dim===LACT+1 && c.owned){ const m=`${esc(c.name)} dried off after a ${LACT}-day lactation. 60-day rest before calving.`; log('🌙',m); drop.events.push(m) }
+    if(c.dim===LACT+1 && c.owned) say('🌙', `${esc(c.name)} dried off after a ${LACT}-day lactation. 60-day rest before calving.`);
     if(c.dim>CYCLE){
       c.lact++; c.dim=1;
-      if(c.lact>MAXL){ c.retired=true; if(c.owned){ S.wallet+=1300; const m=`${esc(c.name)} retired after ${MAXL} lactations. Salvage ${fmt$(1300)} paid out.`; log('🏁',m); drop.events.push(m) } return }
+      if(c.lact>MAXL){ c.retired=true;
+        if(c.owned){ const refund = (c.slots-c.filled)*c.slotPaid; gross += 1300+refund; net += 1300+refund;
+          say('🏁', `${esc(c.name)} retired after ${MAXL} lactations. Salvage ${fmt$(1300)}${refund?` + ${fmt$(refund)} refund for unfilled daughter slots`:''}.`) }
+        return }
       if(c.owned){
-        const ev = calfEV(c, sireOf(c)); const heifer = r() < ev.heiferP; const value = heifer ? ev.hv : ev.bv;
-        c.calves.push({day:S.day, sex:heifer?'Heifer':'Bull', value:Math.round(value)}); S.wallet += value;
-        if(heifer) S.badges.heifer = S.badges.heifer||S.day;
-        const m = `${esc(c.name)} calved: a <b>${heifer?'heifer':'bull'} calf</b> (${fmt$(value)})${c.sireChoice?' by '+BULLS[c.sireChoice].name.split(' ')[1]:''}.`; log(heifer?'🎀':'🐂', m); drop.events.push(m);
+        const ev = calfEV(c, sireOf(c)); const heifer = r() < ev.heiferP;
+        const by = c.sireChoice ? ' by '+BULLS[c.sireChoice].name.split(' ')[1] : '';
+        if(heifer && c.filled < c.slots){
+          const d = daughterOf(c, sireOf(c)); c.daughters = [...(c.daughters||[]), d.id]; c.filled++; S.cows.push(d);
+          c.calves.push({day:S.day, sex:'Heifer', value:0, kept:true}); S.badges.heifer = S.badges.heifer||S.day;
+          say('🎀', `It's a heifer${by}! <b>${esc(d.name)}</b> fills daughter slot ${c.filled} of ${c.slots} and joins your herd for rearing.`);
+        } else {
+          const value = heifer ? ev.hv : ev.bv; extra += value;
+          c.calves.push({day:S.day, sex:heifer?'Heifer':'Bull', value:Math.round(value)});
+          if(heifer) S.badges.heifer = S.badges.heifer||S.day;
+          say(heifer?'🎀':'🐂', `${esc(c.name)} calved: a <b>${heifer?'heifer':'bull'} calf</b>${by}, sold for ${fmt$(value)}.${heifer&&c.slots===c.filled&&c.slots?' All daughter slots are full.':''}`);
+        }
         c.sireChoice = null; delete S.dec.done['sirecost:'+c.id];
       }
     }
     if(!c.owned) return;
     if(c.dim===78 && !S.queue.includes('sire:'+c.id)) { S.queue.push('sire:'+c.id); drop.events.push(`${esc(c.name)} is cycling. Pick a sire in your Decisions.`) }
-    // health events
     if(c.health>0) c.health--;
-    else if(c.dim<=LACT && r()<0.012){ c.health = S.dec.collar?1:3; const m = S.dec.collar ? `Collar flagged low rumination on ${esc(c.name)}. Treated early, 1 day off peak.` : `${esc(c.name)} has mild mastitis. Milk withheld 3 days.`; log('🩺',m); drop.events.push(m) }
+    else if(c.dim<=LACT && r()<0.012){ c.health = S.dec.collar?1:3; say('🩺', S.dec.collar ? `Collar flagged low rumination on ${esc(c.name)}. Treated early, 1 day off peak.` : `${esc(c.name)} has mild mastitis. Milk withheld 3 days.`) }
     const hf = c.health>0 ? (S.dec.collar?0.9:0.7) : 1;
     const e = dayEcon(c,c.lact,c.dim,{noise:true, mods:true, healthFactor:hf});
     const b = benchEcon(c,c.lact,c.dim);
-    let extra = 0;
-    if(c.elite && c.dim%45===10 && c.dim<=LACT){ extra = 6*(700+(c.bpi-300)*3)*0.5; const m=`IVF flush on ${esc(c.name)}: 6 grade-1 embryos, ${fmt$(extra)} net.`; log('🧫',m); drop.events.push(m) }
-    c.hist.push({day:S.day, lact:c.lact, L:e.L, net:e.net+extra});
-    L+=e.L; net+=e.net+extra; bench+=b.net;
-    drop.rows.push({c, L:e.L, net:e.net+extra, alpha: b.L>0?e.L/b.L-1:0});
-    // herd test
+    if(c.elite && c.dim%45===10 && c.dim<=LACT){ const em = 6*(700+(c.bpi-300)*3)*0.5; extra += em; say('🧫', `IVF flush on ${esc(c.name)}: 6 grade-1 embryos, ${fmt$(em)} net.`) }
+    c.hist.push({day:S.day, lact:c.lact, L:e.L, net:e.net+extra, gross:e.gross+extra});
+    L+=e.L; net+=e.net+extra; gross+=e.gross+extra; bench+=b.net;
+    drop.rows.push({c, L:e.L, net:e.net+extra, gross:e.gross+extra, alpha: b.L>0?e.L/b.L-1:0});
     if(S.day%30===0){ c.fat = +(c.fat + (r()-0.45)*0.1).toFixed(2); c.prot = +(c.prot+(r()-0.45)*0.06).toFixed(2) }
   });
   if(S.day%30===0) log('🧪','Monthly herd test is in: fat and protein updated on every cow.');
   S.wallet += net;
-  S.hist.push({day:S.day, L, net, bench});
+  S.hist.push({day:S.day, L, net, gross, bench});
   if(net>=bench){ S.alphaStreak++; S.bestAlpha=Math.max(S.bestAlpha,S.alphaStreak) } else S.alphaStreak=0;
   if(S.alphaStreak>=5) S.badges.alpha5 = S.badges.alpha5||S.day;
   S.badges.firstDrop = S.badges.firstDrop||S.day;
   if(S.day===1 && !S.dec.done.supp && !S.queue.includes('supp')) S.queue.push('supp');
   if(S.day===2 && !S.dec.done.collar && !S.queue.includes('collar')) S.queue.push('collar');
-  // relist sold-out market so there's always something to bid on
-  drop.L=L; drop.net=net; drop.bench=bench;
+  drop.L=L; drop.net=net; drop.gross=gross; drop.bench=bench;
   save();
   return drop;
 }
 function nextDay(n=1){
   let agg=null;
-  for(let i=0;i<n;i++){ const d=advanceDay(); if(!agg){agg={...d, rows:d.rows.map(x=>({...x}))}} else { agg.L+=d.L; agg.net+=d.net; agg.bench+=d.bench; agg.events.push(...d.events); d.rows.forEach(x=>{const a=agg.rows.find(y=>y.c.id===x.c.id); if(a){a.L+=x.L;a.net+=x.net} else agg.rows.push({...x})}); agg.day=d.day } }
+  for(let i=0;i<n;i++){ const d=advanceDay(); if(!agg){agg={...d, rows:d.rows.map(x=>({...x}))}} else { agg.L+=d.L; agg.net+=d.net; agg.gross+=d.gross; agg.bench+=d.bench; agg.events.push(...d.events); d.rows.forEach(x=>{const a=agg.rows.find(y=>y.c.id===x.c.id); if(a){a.L+=x.L;a.net+=x.net;a.gross+=x.gross;a.rearing=x.rearing} else agg.rows.push({...x})}); agg.day=d.day } }
   agg.n=n; showDrop(agg); renderAll();
 }
 function showDrop(d){
@@ -1108,16 +1277,17 @@ function showDrop(d){
     <div class="m-top" id="mTop">
       <div class="lbl">Milk Drop · ${d.n>1?d.n+' days to ':''}${dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}</div>
       <div class="big num" id="mBig">A$0.00</div>
-      <div>${fmtN(d.L,1)} L shipped · <b>${pct(alpha,1)}</b> vs herd-mates</div>
+      <div>gross milk cheque · ${fmtN(d.L,1)} L shipped</div>
+      <div style="margin-top:6px;font-size:14px">Net <b class="num">${fmt$(d.net,2)}</b> · after tax ≈ <b class="num">${fmt$(d.net>0?d.net*(1-margRate(S.params.income)):d.net,2)}</b> · <b>${pct(alpha,1)}</b> vs herd</div>
       ${S.alphaStreak>1?`<div class="streak" style="display:inline-block;margin-top:8px;background:rgba(255,255,255,.16);padding:3px 10px;border-radius:99px;font-size:12px">${S.alphaStreak}-day streak beating the herd</div>`:''}
     </div>
     <div class="m-body">
-      ${d.rows.map(x=>`<div class="m-row"><div class="cowcell">${hideSVG(x.c)}<div><b>${esc(x.c.name)}</b><small>${fmtN(x.L,1)} L</small></div></div><div style="text-align:right"><b class="num">${fmt$(x.net,2)}</b><br><small class="${x.alpha>=0?'pos':'neg'}">${pct(x.alpha)} vs herd</small></div></div>`).join('')}
+      ${d.rows.map(x=>`<div class="m-row"><div class="cowcell">${hideSVG(x.c)}<div><b>${esc(x.c.name)}</b><small>${x.rearing?'rearing heifer':fmtN(x.L,1)+' L'}</small></div></div><div style="text-align:right"><b class="num">${x.rearing?fmt$(x.net,2):fmt$(x.gross,2)}</b><br><small class="${x.rearing?'muted':x.alpha>=0?'pos':'neg'}">${x.rearing?'rearing cost':'net '+fmt$(x.net,2)+' · '+pct(x.alpha)+' vs herd'}</small></div></div>`).join('')}
       ${d.events.map(e=>`<div class="m-ev">${e}</div>`).join('')}
       <button class="btn btn-primary" id="mClose">${S.queue.length?`Nice. ${S.queue.length} decision${S.queue.length>1?'s':''} waiting →`:'Back to my herd'}</button>
     </div></div>`;
   m.hidden = false;
-  const big = $('#mBig'), target = d.net, t0 = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches?0:900;
+  const big = $('#mBig'), target = d.gross, t0 = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches?0:900;
   (function step(t){ const k = dur? Math.min(1,(t-t0)/dur):1; big.textContent = fmt$(target*(1-Math.pow(1-k,3)),2); if(k<1) requestAnimationFrame(step) })(t0);
   if(dur){ const top=$('#mTop'); for(let i=0;i<10;i++){ const s=document.createElement('span'); s.className='drip'; s.style.left=(8+Math.random()*84)+'%'; s.style.animationDelay=(Math.random()*.7)+'s'; top.appendChild(s) } }
   $('#mClose').focus();
@@ -1143,8 +1313,10 @@ function auctionTick(){
     if(now >= au.endsAt){
       const c = S.cows.find(x=>x.id===id);
       if(au.leader==='you'){
-        if(S.wallet >= au.cur){ au.status='won'; c.owned=true; c.paid=au.cur; c.boughtDay=S.day; S.wallet-=au.cur; S.badges.firstWin=S.badges.firstWin||S.day||1;
-          log('🔨', `You won <b>${esc(c.name)}</b> for ${fmt$(au.cur)}. She starts earning for you tomorrow.`); toast(`Gavel down! ${c.name} is yours.`) }
+        const pk = au.pkgPrice||0;
+        if(S.wallet >= au.cur+pk){ au.status='won'; c.owned=true; c.paid=au.cur; c.boughtDay=S.day; S.wallet-=au.cur+pk; S.badges.firstWin=S.badges.firstWin||S.day||1;
+          c.slots=au.pkg||0; c.filled=0; c.slotPaid=c.slots?pk/c.slots:0; c.daughters=[];
+          log('🔨', `You won <b>${esc(c.name)}</b> for ${fmt$(au.cur)}${c.slots?` with ${c.slots} daughter slot${c.slots>1?'s':''} (${fmt$(pk)})`:''}. She starts earning for you tomorrow.`); toast(`Gavel down! ${c.name} is yours.`) }
         else { au.status='lost'; toast(`Auction for ${c.name} voided: not enough in your wallet.`) }
       } else { au.status='lost'; }
       changed=true; continue;
@@ -1173,6 +1345,7 @@ function auctionTick(){
    ============================================================ */
 let plScope = 'herd';
 const SLIDERS = [
+  ['h','Farm economics'],
   ['price','Milk price','A$/kg MS',7.5,11,0.05,v=>'A$'+v.toFixed(2),'Farmgate price per kg of milk solids (fat + protein). Southern opening prices have ranged ~A$8.60–9.50.'],
   ['feed','Feed cost','% of milk revenue',20,65,1,v=>v+'%','Purchased grain, fodder, and pasture costs.'],
   ['labour','Labour','% of milk revenue',5,30,1,v=>v+'%','Wages plus imputed owner-operator labour.'],
@@ -1180,6 +1353,11 @@ const SLIDERS = [
   ['util','Utilities','% of milk revenue',1,12,0.5,v=>v+'%','Power for the shed and vat, water, and gas.'],
   ['other','Other','% of milk revenue',2,20,0.5,v=>v+'%','Repairs, insurance, admin and depreciation.'],
   ['mgmt','Management fee','% of gross',0,10,0.5,v=>v+'%','Platform and farm-manager fee, charged on all milk revenue.'],
+  ['h','Owner costs'],
+  ['rear','Heifer rearing','A$ per heifer to first calving',1500,4000,50,v=>'A$'+fmtN(v),'Milk replacer, weaning, 21 months agistment, vaccinations and joining. Industry range roughly A$2,000–3,200.'],
+  ['ins','Livestock insurance','% of purchase value / yr',0,6,0.5,v=>v+'%','Mortality and theft cover on cows you bought. Optional; 0% means you carry the risk.'],
+  ['dryCost','Dry-cow upkeep','A$ per day',1,6,0.1,v=>'A$'+v.toFixed(2),'Feed and care during the 60-day dry period, when there\'s no milk cheque.'],
+  ['h','Valuation'],
   ['cull','Cull rate','% per year',10,35,1,v=>v+'%','Annual chance of early exit. Australian herds typically run around 18–25%.'],
   ['disc','Discount rate','% per year',4,16,0.5,v=>v+'%','Your required return, used to discount LTV-L.'],
 ];
@@ -1187,11 +1365,11 @@ function renderLab(){
   const P = S.params;
   $('#presets').innerHTML = Object.entries(PRESETS).map(([k,p])=>`<button class="chip" data-preset="${k}" aria-pressed="${P.preset===k}">${p.label}</button>`).join('');
   if(!$('#sliders').children.length){
-    $('#sliders').innerHTML = SLIDERS.map(([k,l,u,min,max,st,f,help])=>`<div class="sl"><label for="s-${k}">${l} <span class="muted" style="font-weight:400">· ${u}</span></label><output id="o-${k}"></output><input type="range" id="s-${k}" min="${min}" max="${max}" step="${st}" data-k="${k}"><small>${help}</small></div>`).join('');
+    $('#sliders').innerHTML = SLIDERS.map(([k,l,u,min,max,st,f,help])=> k==='h' ? `<div class="eyebrow" style="margin-top:14px">${l}</div>` : `<div class="sl"><label for="s-${k}">${l} <span class="muted" style="font-weight:400">· ${u}</span></label><output id="o-${k}"></output><input type="range" id="s-${k}" min="${min}" max="${max}" step="${st}" data-k="${k}"><small>${help}</small></div>`).join('');
   }
-  SLIDERS.forEach(([k,,,,,,f])=>{ $('#s-'+k).value = P[k]; $('#o-'+k).textContent = f(+P[k]) });
+  SLIDERS.forEach(([k,,,,,,f])=>{ if(k==='h') return; $('#s-'+k).value = P[k]; $('#o-'+k).textContent = f(+P[k]) });
   const os = owned();
-  const opts = [['herd','My herd (all cows)'], ...os.map(c=>[c.id,c.name]), ...S.cows.filter(c=>!c.owned&&S.auctions[c.id]?.status==='live').map(c=>[c.id,c.name+' (market)'])];
+  const opts = [['herd','My herd (all animals)'], ...os.map(c=>[c.id,c.name]), ...S.cows.filter(c=>!c.owned&&S.auctions[c.id]?.status==='live').map(c=>[c.id,c.name+' (market)'])];
   if(!opts.find(o=>o[0]===plScope)) plScope='herd';
   $('#plScope').innerHTML = opts.map(([v,l])=>`<option value="${v}" ${v===plScope?'selected':''}>${esc(l)}</option>`).join('');
   renderPL();
@@ -1199,46 +1377,74 @@ function renderLab(){
 function renderPL(){
   const P = S.params;
   const cows = plScope==='herd' ? owned() : [S.cows.find(c=>c.id===plScope)];
-  const sum = {L:0, milk:0, calves:0, embryo:0, base:{feed:0,labour:0,vet:0,util:0,other:0,dry:0}, feedTop:0, supp:0, collar:0, semen:0, mgmt:0};
-  cows.forEach(c=>{ const r=project(c,365,true); sum.L+=r.L; sum.milk+=r.milk; sum.calves+=r.calves; sum.embryo+=r.embryo; sum.feedTop+=r.feedTop; sum.supp+=r.supp; sum.collar+=r.collar; sum.semen+=r.semen; sum.mgmt+=r.mgmt; for(const k in r.base) sum.base[k]+=r.base[k] });
+  const sum = {L:0, milk:0, calves:0, embryo:0, base:{feed:0,labour:0,vet:0,util:0,other:0,dry:0,rear:0}, feedTop:0, supp:0, collar:0, ins:0, semen:0, mgmt:0, newHeifers:0};
+  cows.forEach(c=>{ const r=project(c,365,true); for(const k in r){ if(k==='base') for(const b in r.base) sum.base[b]+=r.base[b]; else sum[k]+=r[k] } });
   const rev = sum.milk + sum.calves + sum.embryo;
-  const op = Object.values(sum.base).reduce((a,b)=>a+b,0);
+  const farmOp = COSTS.reduce((a,[k])=>a+sum.base[k],0);
+  const owner = sum.base.dry + sum.base.rear + sum.ins;
   const decs = sum.feedTop+sum.supp+sum.collar+sum.semen;
-  const net = rev - op - decs - sum.mgmt;
-  const price = cows.reduce((a,c)=>a+(c.owned?c.paid:S.auctions[c.id].cur),0);
-  const cpl = (op+decs+sum.mgmt)/sum.L*100;
-  const be = P.price * (op+decs+sum.mgmt - sum.calves - sum.embryo)/sum.milk;
+  const costs = farmOp + owner + decs + sum.mgmt;
+  const net = rev - costs;
+  const price = cows.reduce((a,c)=>a+(c.owned?(c.paid||0):S.auctions[c.id].cur),0);
+  const cpl = sum.L ? costs/sum.L*100 : 0;
+  const be = sum.milk ? P.price*(costs - sum.calves - sum.embryo)/sum.milk : 0;
   const lt = cows.reduce((a,c)=>a+ltv(c,true).total,0);
+  // tax lens
+  let stock = 0; cows.forEach(c=>{ if(c.isDaughter) return; const open = c.owned ? (c.paid||0) : S.auctions[c.id].cur; stock += marketValue(shifted(c,365)) - open });
+  const ni = sum.newHeifers*NI_VALUE;
+  const taxable = net + stock + ni;
+  const inc = P.income, rate = margRate(inc);
+  let tax, carry = 0;
+  if(taxable>=0 || P.ncl) tax = incomeTax(inc+taxable) - incomeTax(inc); else { tax = 0; carry = -taxable }
+  const afterTax = net - tax;
   $('#plTitle').textContent = plScope==='herd' ? 'Next 12 months · my herd' : 'Next 12 months · '+cows[0].name;
   $('#plOuts').innerHTML = `
-    <div class="tile"><span>Net profit</span><b class="${net>=0?'pos':'neg'}">${fmt$(net)}</b><small>${(net/rev*100).toFixed(1)}% margin</small></div>
-    <div class="tile"><span>Yield on price</span><b>${(net/price*100).toFixed(1)}%</b><small>on ${fmt$(price)}</small></div>
-    <div class="tile"><span>Cost of production</span><b>${cpl.toFixed(1)}¢/L</b><small>${fmtN(sum.L)} L</small></div>
-    <div class="tile"><span>Breakeven price</span><b>A$${be.toFixed(2)}</b><small>per kg MS, costs held in A$</small></div>`;
+    <div class="tile"><span>Gross revenue</span><b>${fmt$(rev)}</b><small>${fmtN(sum.L)} L · ${(rev/price*100).toFixed(0)}% of price</small></div>
+    <div class="tile"><span>Net profit</span><b class="${net>=0?'pos':'neg'}">${fmt$(net)}</b><small>${rev?(net/rev*100).toFixed(1):0}% margin · ${(net/price*100).toFixed(1)}% yield</small></div>
+    <div class="tile"><span>After-tax cash</span><b class="${afterTax>=0?'pos':'neg'}">${fmt$(afterTax)}</b><small>${tax<0?'incl. '+fmt$(-tax)+' tax saving':'at '+Math.round(rate*100)+'% marginal'}</small></div>
+    <div class="tile"><span>Cost of production</span><b>${cpl.toFixed(1)}¢/L</b><small>breakeven A$${be.toFixed(2)}/kg MS</small></div>`;
   const rows = [
     {label:'Milk revenue', v:sum.milk, kind:'rev'},
-    ...(sum.calves?[{label:'Calves', v:sum.calves, kind:'rev'}]:[]),
+    ...(sum.calves?[{label:'Calf sales', v:sum.calves, kind:'rev'}]:[]),
     ...(sum.embryo?[{label:'IVF embryos', v:sum.embryo, kind:'rev'}]:[]),
     ...COSTS.map(([k,l])=>({label:l.split(' (')[0], v:sum.base[k], kind:'cost', share:sum.base[k]/sum.milk})),
-    ...(sum.base.dry?[{label:'Dry-cow upkeep', v:sum.base.dry, kind:'cost', share:sum.base.dry/sum.milk}]:[]),
+    ...(owner?[{label:'Rearing, dry & insurance', v:owner, kind:'cost', share:owner/sum.milk}]:[]),
     ...(decs?[{label:'Your decisions', v:decs, kind:'cost', share:decs/sum.milk}]:[]),
     {label:'Management fee', v:sum.mgmt, kind:'cost', share:sum.mgmt/sum.milk},
-    {label:'Net to investor', v:net, kind:'net'},
+    {label:'Net to owner', v:net, kind:'net'},
   ];
   wfChart($('#wfChart'), rows);
-  const line = (l,v,cls='') => `<tr class="${cls}"><td>${l}</td><td class="r num">${fmt$(v)}</td><td class="r num">${(v/sum.milk*100).toFixed(1)}%</td><td class="r num">${(v/sum.L*100).toFixed(1)}¢</td></tr>`;
+  const line = (l,v,cls='') => `<tr class="${cls}"><td>${l}</td><td class="r num">${fmt$(v)}</td><td class="r num">${sum.milk?(v/sum.milk*100).toFixed(1)+'%':'—'}</td><td class="r num">${sum.L?(v/sum.L*100).toFixed(1)+'¢':'—'}</td></tr>`;
   $('#plTbl').innerHTML = `<tr><th>Line</th><th class="r">A$ / yr</th><th class="r">% milk rev.</th><th class="r">per litre</th></tr>
-    ${line('Milk revenue', sum.milk)}${sum.calves?line('Calf sales / progeny', sum.calves):''}${sum.embryo?line('IVF embryo sales (net)', sum.embryo):''}
-    ${line('Total revenue', rev, 'sub')}
+    ${line('Milk revenue', sum.milk)}${sum.calves?line('Calf sales', sum.calves):''}${sum.embryo?line('IVF embryo sales (net)', sum.embryo):''}
+    ${line('Gross revenue', rev, 'sub')}
     ${COSTS.map(([k,l])=>line(l, -sum.base[k], 'minus')).join('')}
-    ${sum.base.dry?line('Dry-cow upkeep (A$'+S.params.dryCost.toFixed(2)+'/day)', -sum.base.dry, 'minus'):''}
+    ${sum.base.rear?line('Heifer rearing', -sum.base.rear, 'minus'):''}
+    ${sum.base.dry?line('Dry-cow upkeep', -sum.base.dry, 'minus'):''}
+    ${sum.ins?line('Livestock insurance', -sum.ins, 'minus'):''}
     ${sum.feedTop?line('Grain top-up ('+FEED[S.dec.feed].k+')', -sum.feedTop, 'minus'):''}
     ${sum.supp?line('RumenPro supplement', -sum.supp, 'minus'):''}
     ${sum.collar?line('PastureSense collars', -sum.collar, 'minus'):''}
     ${sum.semen?line('Sexed semen', -sum.semen, 'minus'):''}
     ${line('Management fee', -sum.mgmt, 'minus')}
-    ${line('Net to investor', net, 'net')}
+    ${line('Net to owner', net, 'net')}
     <tr><td class="muted">LTV-L at these settings</td><td class="r num">${fmt$(lt)}</td><td colspan="2" class="r muted">${(lt/price).toFixed(2)}× price</td></tr>`;
+  const trow = (l,v,note='',cls='') => `<tr class="${cls}"><td>${l}${note?`<br><small class="muted">${note}</small>`:''}</td><td class="r num">${fmt$(v)}</td></tr>`;
+  if(!$('#s-income')) $('#taxPanel').innerHTML = `<div class="panel-h"><h2>Tax lens</h2><span class="muted">Australian resident · FY2026–27 · estimate</span></div>
+    <div class="sl" style="border:0;padding-top:0"><label for="s-income">Your other taxable income <span class="muted" style="font-weight:400">· salary etc.</span></label><output id="o-income"></output><input type="range" id="s-income" min="0" max="400000" step="5000" value="${inc}" data-k="income"><small>Marginal rate includes the 2% Medicare levy.</small></div>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:4px 0 12px"><input type="checkbox" id="ncl" ${P.ncl?'checked':''} style="margin-top:3px;accent-color:var(--accent)"><span><b>My farm losses can offset my salary</b><br><span class="muted">Only if you pass the non-commercial loss rules (Division 35): generally income under A$250k plus one test, such as A$20k+ assessable farm income. Otherwise losses are carried forward.</span></span></label>
+    <div id="taxBody"></div>`;
+  $('#s-income').value = inc; $('#ncl').checked = !!P.ncl;
+  $('#o-income').textContent = `${fmt$(inc)} · ${Math.round(rate*100)}% marginal`;
+  $('#taxBody').innerHTML = `<div class="tbl-wrap"><table>
+      ${trow('Net farm profit (cash)', net)}
+      ${trow('Trading stock: livestock value change', stock, 'cows are trading stock; the fall in value as they age is deductible')}
+      ${ni?trow('Natural increase', ni, `${sum.newHeifers.toFixed(1)} expected daughters valued at the ${fmt$(NI_VALUE)}/head minimum`):''}
+      ${trow('Taxable farm income', taxable, '', 'sub')}
+      ${trow(tax<0?'Tax saving on your salary':'Tax payable on farm income', -tax, carry?`loss of ${fmt$(carry)} carried forward to future farm profits`:'')}
+      ${trow('After-tax cash', afterTax, `${(afterTax/price*100).toFixed(1)}% after-tax yield on ${fmt$(price)}`, 'net')}
+    </table></div>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">Deductible here: farm operating costs, management fees, heifer rearing, insurance, supplements, collars and semen. A cow's purchase price is a trading-stock cost: you deduct it as her value declines, not all up front. General information only, not tax advice. Whether a passive owner is "carrying on a primary production business" depends on the facts, so check the structure with a tax adviser.</p>`;
 }
 
 /* ============================================================
@@ -1249,8 +1455,8 @@ function show(v){ current=v; document.querySelectorAll('.view').forEach(s=>s.hid
 function renderHeader(){ const d=dateOf(S.day); $('#dateLbl').textContent = d.toLocaleDateString('en-AU',{weekday:'short', day:'numeric', month:'short', year:'numeric'}); $('#seasonLbl').textContent = `Day ${S.day} · ${season(d)}`; $('#walletLbl').textContent = fmt$(S.wallet); const q=S.queue.length, dot=$('#decDot'); dot.hidden=!q; dot.textContent=q }
 function renderAll(){ renderHeader(); if(current==='market') renderMarket(); if(current==='herd') renderHerd(); if(current==='lab') renderLab(); if(openId) renderCow() }
 function toast(t){ const el=document.createElement('div'); el.className='toast'; el.textContent=t; $('#toasts').appendChild(el); setTimeout(()=>el.remove(), 3600) }
-function save(){ try{ localStorage.setItem('herdroyalty-v1', JSON.stringify(S)) }catch(e){} }
-function load(){ try{ const s=JSON.parse(localStorage.getItem('herdroyalty-v1')); if(s && s.v===1) return s }catch(e){} return null }
+function save(){ try{ localStorage.setItem('herdroyalty-v2', JSON.stringify(S)) }catch(e){} }
+function load(){ try{ const s=JSON.parse(localStorage.getItem('herdroyalty-v2')); if(s && s.v===2) return s }catch(e){} return null }
 
 S = load() || freshState();
 if(!load()) save();
@@ -1270,13 +1476,16 @@ document.addEventListener('click', e=>{
   if(t.id==='mClose'){ $('#dropModal').hidden=true; if(S.queue.length && current!=='herd') show('herd'); return }
   if(t.id==='nextDay') return nextDay(1);
   if(t.id==='ff7') return nextDay(7);
+  if(t.id==='ff30') return nextDay(30);
+  if(t.id==='extendSlot') return extendSlot();
+  if(t.dataset.pkg){ pkgSel[openId] = +t.dataset.pkg; return renderCow() }
   if(t.id==='resetBtn'){ $('#resetConfirm').hidden=false; return }
   if(t.id==='resetNo'){ $('#resetConfirm').hidden=true; return }
-  if(t.id==='resetYes'){ try{localStorage.removeItem('herdroyalty-v1')}catch(e){} S=freshState(); save(); pending={}; $('#resetConfirm').hidden=true; closeCow(); show('market'); toast('Demo reset. Fresh auctions are live.'); return }
+  if(t.id==='resetYes'){ try{localStorage.removeItem('herdroyalty-v2')}catch(e){} S=freshState(); save(); pending={}; $('#resetConfirm').hidden=true; closeCow(); show('market'); toast('Demo reset. Fresh auctions are live.'); return }
 });
 document.addEventListener('submit', e=>{ if(e.target.id==='bidForm'){ e.preventDefault(); placeBid(openId, +$('#bidAmt').value.replace(/[^0-9.]/g,'')) } });
 document.addEventListener('change', e=>{ if(e.target.id==='mktSort'){ mktSort=e.target.value; renderMarket() } if(e.target.id==='plScope'){ plScope=e.target.value; renderPL() } });
-document.addEventListener('input', e=>{ const k=e.target.dataset?.k; if(!k) return; S.params[k]=+e.target.value; S.params.preset=null; const sl=SLIDERS.find(s=>s[0]===k); $('#o-'+k).textContent=sl[6](+e.target.value); document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed','false')); save(); renderPL() });
+document.addEventListener('input', e=>{ const k=e.target.dataset?.k; if(!k) return; if(k==='income'){ S.params.income=+e.target.value; save(); return renderPL() } S.params[k]=+e.target.value; S.params.preset=null; const sl=SLIDERS.find(s=>s[0]===k); $('#o-'+k).textContent=sl[6](+e.target.value); document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed','false')); save(); renderPL() });
 $('#scrim').addEventListener('click', closeCow);
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(!$('#dropModal').hidden) $('#dropModal').hidden=true; else closeCow() } });
 
