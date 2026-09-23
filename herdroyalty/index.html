@@ -1,0 +1,1287 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HerdRoyalty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#EEF2EE; --surface:#FFFFFF; --surface-2:#F6F8F5; --ink:#14201A; --ink-2:#44554B; --muted:#6F7E75;
+  --line:#D9E0DA; --line-2:#E8EDE8;
+  --accent:#1B5E45; --accent-ink:#FFFFFF; --accent-soft:#DCEDE4;
+  --gold:#A8740F; --gold-soft:#F6EBCF;
+  --series:#16825A; --bench:#8C9990;
+  --good:#16804A; --good-soft:#DDF2E4; --bad:#B8402A; --bad-soft:#F8E1DB; --warn:#9A6A10;
+  --cost:#C07A66;
+  --shadow:0 1px 2px rgba(20,32,26,.06),0 8px 24px -12px rgba(20,32,26,.18);
+  --radius:14px;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0C1310; --surface:#141D19; --surface-2:#18231E; --ink:#E6EEE9; --ink-2:#A9B9B0; --muted:#7F9087;
+    --line:#26342D; --line-2:#1F2B25;
+    --accent:#4FB386; --accent-ink:#06120C; --accent-soft:#18372A;
+    --gold:#E0AE4C; --gold-soft:#3A2F17;
+    --series:#2A9A6A; --bench:#6E7C74;
+    --good:#4CC47A; --good-soft:#15331F; --bad:#F07A62; --bad-soft:#3A1D17; --warn:#E0AE4C;
+    --cost:#C9826E;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0C1310; --surface:#141D19; --surface-2:#18231E; --ink:#E6EEE9; --ink-2:#A9B9B0; --muted:#7F9087;
+  --line:#26342D; --line-2:#1F2B25;
+  --accent:#4FB386; --accent-ink:#06120C; --accent-soft:#18372A;
+  --gold:#E0AE4C; --gold-soft:#3A2F17;
+  --series:#2A9A6A; --bench:#6E7C74;
+  --good:#4CC47A; --good-soft:#15331F; --bad:#F07A62; --bad-soft:#3A1D17; --warn:#E0AE4C;
+  --cost:#C9826E;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:16px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.02em}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:-.03em}
+.brand svg{width:26px;height:26px}
+.brand small{font-family:var(--f-body);font-weight:500;font-size:11px;color:var(--muted);letter-spacing:0;border:1px solid var(--line);padding:1px 6px;border-radius:99px}
+.nav{display:flex;gap:2px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.nav button{border:0;background:none;padding:6px 12px;border-radius:7px;font-weight:600;color:var(--ink-2);position:relative}
+.nav button[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.nav .dot{position:absolute;top:3px;right:4px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--gold);color:#fff;font-size:10px;line-height:16px;text-align:center}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.daychip{display:flex;flex-direction:column;line-height:1.15;text-align:right}
+.daychip b{font-weight:600;font-size:13px}
+.daychip span{font-size:11px;color:var(--muted)}
+.wallet{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:5px 10px;line-height:1.15}
+.wallet span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:10px;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn-primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-ghost{background:none;border-color:transparent;color:var(--ink-2)}
+.btn-sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+
+main{padding-block:22px 60px}
+.view[hidden]{display:none!important}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.3fr 1fr;gap:24px;align-items:end;margin-bottom:22px}
+.hero h1{font-size:clamp(30px,4.4vw,48px);font-weight:800;line-height:1.02}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{color:var(--ink-2);max-width:56ch;margin:10px 0 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.stats div{background:var(--surface);padding:12px 14px}
+.stats b{display:block;font-size:18px;font-family:var(--f-mono);font-weight:600}
+.stats span{font-size:11.5px;color:var(--muted)}
+
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-weight:500;font-size:13px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.toolbar select{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 10px;margin-left:auto}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:12px;transition:transform .15s,box-shadow .15s}
+.card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.card.sold{opacity:.62}
+.c-head{display:flex;gap:12px;align-items:center}
+.c-head h3{font-size:16.5px;line-height:1.15}
+.c-head .sub{font-size:12px;color:var(--muted)}
+.hide{flex:0 0 auto;width:54px;height:54px;border-radius:12px;overflow:hidden;position:relative;border:1px solid var(--line)}
+.hide svg{display:block;width:100%;height:100%}
+.tag{position:absolute;right:-2px;bottom:-2px;background:#F2D23A;color:#1a1a1a;font:600 9px/1 var(--f-mono);padding:3px 4px;border-radius:5px 0 10px 0;border:1px solid rgba(0,0,0,.25)}
+.pills{display:flex;flex-wrap:wrap;gap:5px}
+.pill{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap}
+.pill.elite{background:var(--gold-soft);color:var(--gold);border-color:transparent;font-weight:600}
+.pill.dry{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.pill.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.today{display:flex;align-items:baseline;gap:8px}
+.today b{white-space:nowrap;font-family:var(--f-display);font-size:28px;font-weight:700;letter-spacing:-.03em}
+.today span{font-size:12px}
+.kv3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid var(--line-2);padding-top:10px}
+.kv3 span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.kv3 b{font-family:var(--f-mono);font-size:13.5px;font-weight:600}
+.left{display:flex;flex-direction:column;gap:4px}
+.left .bar{height:6px;border-radius:99px;background:var(--line-2);overflow:hidden}
+.left .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--series),var(--accent));border-radius:99px}
+.left small{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.c-foot{display:flex;align-items:center;gap:10px;margin-top:auto;border-top:1px solid var(--line-2);padding-top:10px}
+.c-foot .bid b{font-family:var(--f-mono);font-size:15px}
+.c-foot .bid span{display:block;font-size:11px;color:var(--muted)}
+.c-foot .btn{margin-left:auto}
+.cd{font-family:var(--f-mono);font-size:12px;padding:2px 7px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line-2)}
+.cd.hot{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.lead-you{color:var(--good);font-weight:600}
+
+/* panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.panel h2{font-size:17px;margin-bottom:10px}
+.panel-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.panel-h h2{margin:0}
+.cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* milk drop hero */
+.drop{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--accent);color:var(--accent-ink);border-radius:18px;padding:20px 22px;margin-bottom:16px;position:relative;overflow:hidden}
+.drop .big{font-family:var(--f-display);font-weight:800;font-size:clamp(34px,6vw,56px);line-height:.95;letter-spacing:-.04em}
+.drop .lbl{font-size:12px;opacity:.8;text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+.drop-stats{display:flex;gap:26px;flex-wrap:wrap;justify-content:flex-end}
+.drop-stats div b{display:block;font-family:var(--f-mono);font-size:20px;font-weight:600}
+.drop-stats div span{font-size:11.5px;opacity:.8}
+.drop .streak{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);padding:3px 10px;border-radius:99px;font-size:12px;margin-top:8px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;position:relative}
+.kpi .k{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.kpi .k b{font-size:12px;font-weight:600;color:var(--ink-2)}
+.kpi .v{font-family:var(--f-mono);font-size:20px;font-weight:600;margin-top:4px}
+.kpi .d{font-size:11.5px;color:var(--muted)}
+.info{border:1px solid var(--line);background:none;width:18px;height:18px;border-radius:50%;font-size:11px;line-height:1;color:var(--muted);padding:0;flex:0 0 auto}
+
+table{border-collapse:collapse;width:100%}
+.tbl-wrap{overflow-x:auto}
+th{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+td.r,th.r{text-align:right;white-space:nowrap}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--surface-2)}
+.cowcell{display:flex;align-items:center;gap:10px;min-width:180px}
+.cowcell .hide{width:34px;height:34px;border-radius:8px}
+.cowcell .tag{display:none}
+.cowcell b{display:block;font-size:13.5px}
+.cowcell small{color:var(--muted);font-size:11.5px}
+.minibar{width:90px;height:6px;border-radius:99px;background:var(--line-2);overflow:hidden}
+.minibar i{display:block;height:100%;background:var(--series)}
+
+/* decisions */
+.dec{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px}
+.dec.new{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+.dec h3{font-size:15px}
+.dec p{margin:0;color:var(--ink-2);font-size:13px}
+.dec .due{font-size:11px;color:var(--gold);font-weight:600;text-transform:uppercase;letter-spacing:.07em}
+.opts{display:grid;gap:6px}
+.opt{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px}
+.opt[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.opt .radio{width:14px;height:14px;border-radius:50%;border:2px solid var(--line)}
+.opt[aria-pressed="true"] .radio{border-color:var(--accent);background:radial-gradient(var(--accent) 45%,transparent 50%)}
+.opt b{font-size:13px;display:block}
+.opt small{font-size:11.5px;color:var(--muted)}
+.opt .imp{font-family:var(--f-mono);font-size:12px;text-align:right;white-space:nowrap}
+.bulls{display:grid;grid-template-columns:1fr;gap:6px}
+.bull{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px;text-align:left;display:flex;flex-direction:column;gap:4px}
+.bull[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.bull b{font-family:var(--f-display);font-size:14px;line-height:1.1}
+.bull .bpi{font-family:var(--f-mono);font-weight:600;font-size:18px}
+.bull dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr) auto);gap:1px 10px;margin:0;font-size:11.5px}
+.bull dt{color:var(--muted)} .bull dd{margin:0;font-family:var(--f-mono);text-align:right}
+.done{font-size:12.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;border:1px dashed var(--line)}
+
+.feed{display:flex;flex-direction:column;gap:0;max-height:320px;overflow:auto}
+.ev{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-2);font-size:13px;align-items:start}
+.ev .ic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--surface-2);font-size:13px}
+.ev small{color:var(--muted);font-size:11px;white-space:nowrap}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.badge{border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;font-size:11.5px;color:var(--muted)}
+.badge .b-ic{width:34px;height:34px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-weight:700;font-family:var(--f-display);color:var(--muted)}
+.badge.on{color:var(--ink);border-color:var(--gold)}
+.badge.on .b-ic{background:var(--gold);color:#fff}
+.lb td{padding:7px 6px}
+.lb tr.me td{background:var(--accent-soft);font-weight:600}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(8,14,11,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100%);background:var(--bg);z-index:41;transform:translateX(102%);transition:transform .25s ease;overflow:auto;border-left:1px solid var(--line);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer.on{transform:none}
+.d-in{padding:18px 20px 40px;display:flex;flex-direction:column;gap:14px}
+.d-head{display:flex;gap:14px;align-items:center}
+.d-head .hide{width:72px;height:72px;border-radius:16px}
+.d-head h2{font-size:24px;line-height:1.05}
+.d-head .x{margin-left:auto;align-self:flex-start}
+.nlis{font-family:var(--f-mono);font-size:11.5px;background:#F2D23A;color:#1a1a1a;padding:1px 6px;border-radius:4px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.tile span{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:block}
+.tile b{font-family:var(--f-mono);font-size:17px;font-weight:600}
+.tile small{display:block;font-size:11px;color:var(--muted)}
+.math{font-family:var(--f-mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;line-height:1.7;overflow-x:auto;white-space:nowrap}
+.bidbox{display:flex;flex-direction:column;gap:10px;border:1px solid var(--accent);border-radius:var(--radius);padding:16px;background:var(--surface)}
+.bidrow{display:flex;gap:8px;flex-wrap:wrap}
+.bidrow input{flex:1 1 140px;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:9px 12px;font-family:var(--f-mono)}
+.bids{font-size:12.5px}
+.bids div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line-2)}
+.gen{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 16px;font-size:13px}
+.gen div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line-2);padding:5px 0}
+.gen span{color:var(--muted)}
+
+/* chart */
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--muted);font:10.5px var(--f-body)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-bottom:6px}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+.tip{position:fixed;z-index:60;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:7px 9px;border-radius:8px;box-shadow:var(--shadow);opacity:0;transition:opacity .1s;max-width:240px}
+.tip.on{opacity:1}
+.tip b{font-family:var(--f-mono)}
+
+/* P&L lab */
+.lab{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:16px;align-items:start}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.sl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:9px 0;border-bottom:1px solid var(--line-2)}
+.sl label{font-weight:600;font-size:13px}
+.sl output{font-family:var(--f-mono);font-weight:600;font-size:13px}
+.sl input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.sl small{grid-column:1/-1;color:var(--muted);font-size:11.5px}
+.pl td:first-child{font-weight:500}
+.pl tr.sub td{font-weight:700;border-top:1px solid var(--line)}
+.pl tr.net td{font-weight:700;font-size:15px;background:var(--accent-soft)}
+.pl tr.minus td:first-child{padding-left:18px;color:var(--ink-2)}
+.outs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+select.scope{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 8px}
+
+/* milk drop overlay */
+.modal{position:fixed;inset:0;display:grid;place-items:center;z-index:50;padding:16px;background:rgba(8,14,11,.55)}
+.modal[hidden]{display:none!important}
+.m-card{background:var(--surface);border-radius:20px;max-width:460px;width:100%;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.5);max-height:calc(100dvh - 32px);overflow-y:auto}
+.m-top{background:var(--accent);color:var(--accent-ink);padding:22px;text-align:center;position:relative}
+.m-top .big{font-family:var(--f-display);font-weight:800;font-size:54px;line-height:1;letter-spacing:-.04em}
+.m-top .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.1em;opacity:.85;font-weight:600}
+.m-body{padding:16px 20px 20px;display:flex;flex-direction:column;gap:10px}
+.m-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--line-2)}
+.m-row .cowcell{min-width:0}
+.m-ev{font-size:13px;background:var(--gold-soft);color:var(--ink);padding:8px 10px;border-radius:10px}
+.drip{position:absolute;width:8px;height:11px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:rgba(255,255,255,.6);top:-12px;animation:drip 1.4s ease-in forwards}
+@keyframes drip{to{transform:translateY(160px);opacity:0}}
+.toasts{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;z-index:70;width:min(420px,calc(100% - 32px))}
+.toast{background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:12px;font-size:13px;box-shadow:var(--shadow);animation:tin .2s ease}
+@keyframes tin{from{transform:translateY(8px);opacity:0}}
+footer{border-top:1px solid var(--line);padding-block:18px 30px;color:var(--muted);font-size:12px}
+footer p{max-width:90ch;margin:0 0 6px}
+
+@media (max-width:900px){
+  .hero,.cols,.lab{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .tiles,.outs{grid-template-columns:repeat(2,1fr)}
+  .drop{grid-template-columns:1fr}
+  .drop-stats{justify-content:flex-start}
+}
+@media (max-width:560px){
+  .bull dl{grid-template-columns:minmax(0,1fr) auto}
+  .top{position:static}
+  .gen{grid-template-columns:1fr}
+  .daychip{display:none}
+  .nav button{padding:6px 9px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head><body>
+
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c5 7 9 11.5 9 17a9 9 0 0 1-18 0c0-5.5 4-10 9-17z" fill="var(--accent)"/><path d="M11.5 20.5a4.5 4.5 0 0 0 4.5 4.5" stroke="var(--bg)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      HerdRoyalty <small>AU · demo</small>
+    </div>
+    <nav class="nav" aria-label="Sections">
+      <button data-view="market" aria-current="page">Market</button>
+      <button data-view="herd">My Herd<span class="dot" id="decDot" hidden></span></button>
+      <button data-view="lab">P&amp;L Lab</button>
+    </nav>
+    <div class="top-right">
+      <div class="daychip"><b id="dateLbl"></b><span id="seasonLbl"></span></div>
+      <div class="wallet"><span>Wallet</span><b class="num" id="walletLbl"></b></div>
+      <button class="btn btn-ghost btn-sm" id="ff7" title="Advance 7 days">+7 days</button>
+      <button class="btn btn-primary" id="nextDay">Next day →</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- MARKET -->
+  <section class="view" id="v-market">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Live auctions · Australian dairy income rights</div>
+        <h1>Own the <em>milk cheque</em>, not the paddock.</h1>
+        <p>Bid on the net income of individual cows on working Australian farms. Every listing is priced on its trailing 12-month earnings, the lactation it has left and the calves and embryos it's expected to produce.</p>
+      </div>
+      <div class="stats" id="mktStats"></div>
+    </div>
+    <div class="toolbar" id="mktFilters"></div>
+    <div class="grid" id="mktGrid"></div>
+  </section>
+
+  <!-- HERD -->
+  <section class="view" id="v-herd" hidden>
+    <div id="herdDrop"></div>
+    <div class="kpis" id="herdKpis"></div>
+    <div class="cols">
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-h"><h2>Holdings</h2><span class="muted" id="holdSub"></span></div>
+          <div class="tbl-wrap"><table id="holdTbl"></table></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Daily net earnings</h2><span class="muted">last 30 days</span></div>
+          <div class="legend"><span><i style="border-color:var(--series)"></i>Your herd (net A$)</span><span><i style="border-color:var(--bench);border-top-style:dashed"></i>Herd-mate benchmark</span></div>
+          <div class="chart" id="earnChart"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Activity</h2></div>
+          <div class="feed" id="feed"></div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-h"><h2>Decisions</h2><span class="muted" id="decSub"></span></div>
+          <div class="stack" id="decList" style="gap:10px"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Badges</h2></div>
+          <div class="badges" id="badges"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Herd Alpha leaderboard</h2><span class="muted">this week</span></div>
+          <table class="lb" id="leader"></table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LAB -->
+  <section class="view" id="v-lab" hidden>
+    <div class="panel-h" style="margin-bottom:14px">
+      <div>
+        <div class="eyebrow">P&amp;L Lab</div>
+        <h1 style="font-size:clamp(26px,3.4vw,36px)">Tune the farm economics</h1>
+      </div>
+    </div>
+    <div class="lab">
+      <div class="panel">
+        <h2>Assumptions</h2>
+        <div class="presets" id="presets"></div>
+        <div id="sliders"></div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-h"><h2 id="plTitle">Next 12 months</h2>
+            <label class="muted" style="font-size:12.5px">Scope <select class="scope" id="plScope"></select></label>
+          </div>
+          <div class="outs" id="plOuts"></div>
+          <div class="chart" id="wfChart"></div>
+        </div>
+        <div class="panel">
+          <h2>Profit &amp; loss</h2>
+          <div class="tbl-wrap"><table class="pl" id="plTbl"></table></div>
+          <p class="muted" style="font-size:12px;margin:10px 0 0">Operating costs are budgeted as a % of each cow's base milk revenue. Your decisions (feed top-up, supplement, collar, semen) are charged at their actual A$ cost, so you see their true marginal return.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p><b>Demo, not an offer.</b> All animals, farms, sires, bidders and figures are simulated. Numbers are benchmarked to published Australian dairy ranges (milk solids price, lactation curves, cost structure). Nothing here is a financial product or advice.</p>
+  <p><button class="btn btn-sm" id="resetBtn">Reset demo</button> <span id="resetConfirm" hidden>Reset all progress? <button class="btn btn-sm" id="resetYes">Yes, reset</button> <button class="btn btn-sm btn-ghost" id="resetNo">Cancel</button></span></p>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Cow detail"></aside>
+<div class="modal" id="dropModal" hidden></div>
+<div class="tip" id="tip"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ============================================================
+   CONSTANTS & MODEL
+   ============================================================ */
+const START = new Date(2026, 8, 23);
+const LM = [0, 0.82, 0.94, 1, 1, 0.96, 0.9];   // lactation-number yield multiplier
+const MAXL = 6, LACT = 305, CYCLE = 365;
+const GRAIN = 0.445;                            // A$/kg grain (≈ $445/t)
+const COLLAR_DAY = 5.90 * 12 / 365;             // A$5.90 per cow per month
+const SUPP_DAY = 0.36, SUPP_L = 0.9, SUPP_FAT = 0.05;
+const FEED = [
+  {k:'Standard ration', kg:0, dL:0,   note:'Pasture + 5 kg grain in the bail'},
+  {k:'+1 kg grain',     kg:1, dL:1.3, note:'Best marginal return'},
+  {k:'+2 kg grain',     kg:2, dL:2.4, note:'Diminishing returns kick in'},
+  {k:'+3 kg grain',     kg:3, dL:3.1, note:'Acidosis risk, watch butterfat'},
+];
+const PRESETS = {
+  south:  {label:'Southern pasture · VIC/TAS', price:9.20, feed:38, labour:16, vet:6, util:5, other:10, mgmt:3},
+  north:  {label:'Northern TMR · NSW/QLD',     price:9.65, feed:50, labour:14, vet:6, util:6, other:9,  mgmt:3},
+  drought:{label:'Dry season',                 price:8.60, feed:52, labour:16, vet:6, util:5, other:10, mgmt:3},
+};
+const COSTS = [
+  ['feed','Feed'],['labour','Labour'],['vet','Vet, AI & herd testing'],['util','Utilities (power, water, shed)'],['other','Other (R&M, insurance, admin)'],
+];
+const CONV = {id:'conv', name:'Conventional (farm AI)', bpi:300, straw:25, conc:0.55, sexed:false};
+const BULLS = {
+  zephyr:{id:'zephyr', name:'Kardella ZEPHYR-ET', tag:'Balanced all-rounder', bpi:412, milk:'+980 L', fat:'+0.12%', prot:'+0.08%', fert:106, ease:'97%', straw:58, conc:0.48, sexed:true},
+  maverick:{id:'maverick', name:'Bushlea MAVERICK', tag:'Components & fertility', bpi:371, milk:'+420 L', fat:'+0.28%', prot:'+0.17%', fert:111, ease:'99%', straw:44, conc:0.52, sexed:true},
+  comet:{id:'comet', name:'Riverbend COMET (genomic)', tag:'Young sire, high ceiling', bpi:448, milk:'+1,250 L', fat:'+0.05%', prot:'+0.06%', fert:99, ease:'95%', straw:72, conc:0.45, sexed:true, rel:'58% rel.'},
+};
+const BOTS = ['@gippsgrazer','@MooMentum','@udderlyrich','@calfcapital','@lactose_vc','@ruminant_ray','@herdhedge','@jerseyjules'];
+
+const BASE_COWS = [
+  // owned at start
+  {id:'bella', name:'Wattle Park Bella 3', stud:'Wattle Park', breed:'Holstein', region:'Gippsland, VIC', farm:'Wattle Park Dairy, Leongatha', lact:3, dim:64, peak:38, fat:3.9, prot:3.3, bpi:356, cls:'VG-87', sire:'Wattle Park Duke', dam:'Wattle Park Bella 1 (VG-86)', owned:true},
+  {id:'clover', name:'Bushlea Clover 12', stud:'Bushlea', breed:'Jersey', region:'Western District, VIC', farm:'Bushlea Jerseys, Terang', lact:2, dim:140, peak:25, fat:5.2, prot:3.9, bpi:322, cls:'GP-84', sire:'Bushlea Hamish', dam:'Bushlea Clover 8 (VG-85)', owned:true},
+  {id:'marigold', name:'Riverbend Marigold 7', stud:'Riverbend', breed:'Illawarra', region:'Goulburn Valley, VIC', farm:'Riverbend Pastoral, Kyabram', lact:4, dim:79, peak:33, fat:4.1, prot:3.4, bpi:338, cls:'VG-86', sire:'Riverbend Samson', dam:'Riverbend Marigold 2', owned:true},
+  // market
+  {id:'lottie', name:'Kardella Zephyr Lottie', stud:'Kardella', breed:'Holstein', region:'Gippsland, VIC', farm:'Kardella Genetics, Korumburra', lact:2, dim:45, peak:42, fat:4.0, prot:3.4, bpi:478, cls:'EX-90', sire:'Kardella ZEPHYR-ET', dam:'Kardella Lottie 4 (EX-92)', elite:true},
+  {id:'pearl', name:'Coldstream Vale Pearl 21', stud:'Coldstream Vale', breed:'Holstein', region:'Goulburn Valley, VIC', farm:'Coldstream Vale, Tongala', lact:1, dim:20, peak:30, fat:3.8, prot:3.2, bpi:402, cls:'GP-83', sire:'Glenlea Orion', dam:'Coldstream Vale Pearl 14 (VG-87)'},
+  {id:'daisy', name:'Bluegum Daisy 44', stud:'Bluegum', breed:'Holstein', region:'Western District, VIC', farm:'Bluegum Flat, Cobden', lact:4, dim:190, peak:36, fat:3.7, prot:3.2, bpi:298, cls:'VG-85', sire:'Bluegum Rocket', dam:'Bluegum Daisy 30'},
+  {id:'ruby', name:'Harvey Rise Ruby 9', stud:'Harvey Rise', breed:'Aussie Red', region:'South West, WA', farm:'Harvey Rise Dairy, Harvey', lact:3, dim:110, peak:32, fat:4.3, prot:3.5, bpi:330, cls:'VG-85', sire:'Harvey Rise Blaze', dam:'Harvey Rise Ruby 4'},
+  {id:'honey', name:'Mt Compass Honey 5', stud:'Mt Compass', breed:'Jersey', region:'Fleurieu, SA', farm:'Compass Hill Jerseys, Mt Compass', lact:3, dim:30, peak:26, fat:5.4, prot:4.0, bpi:365, cls:'VG-88', sire:'Mt Compass Tiberius', dam:'Mt Compass Honey 1 (EX-90)'},
+  {id:'tilly', name:'Bega Glen Tilly 17', stud:'Bega Glen', breed:'Illawarra', region:'Bega Valley, NSW', farm:'Bega Glen, Bemboka', lact:5, dim:250, peak:33, fat:4.0, prot:3.4, bpi:285, cls:'GP-83', sire:'Bega Glen Monarch', dam:'Bega Glen Tilly 9'},
+  {id:'lulu', name:'Smithton Park Lulu 2', stud:'Smithton Park', breed:'Holstein', region:'North West, TAS', farm:'Smithton Park, Smithton', lact:2, dim:296, peak:37, fat:3.9, prot:3.3, bpi:341, cls:'VG-86', sire:'Smithton Park Atlas', dam:'Smithton Park Lulu 1'},
+  {id:'aurora', name:'Kardella Comet Aurora', stud:'Kardella', breed:'Jersey', region:'Gippsland, VIC', farm:'Kardella Genetics, Korumburra', lact:2, dim:90, peak:27, fat:5.6, prot:4.1, bpi:452, cls:'EX-91', sire:'Riverbend COMET', dam:'Kardella Aurora 2 (EX-93)', elite:true},
+  {id:'poppy', name:'Darling Downs Poppy 31', stud:'Darling Downs', breed:'Holstein', region:'Darling Downs, QLD', farm:'Downs Ridge Dairy, Toowoomba', lact:3, dim:345, peak:35, fat:3.8, prot:3.2, bpi:318, cls:'VG-85', sire:'Downs Ridge Titan', dam:'Downs Ridge Poppy 20'},
+];
+const AUCTION_MIN = {lottie:140, pearl:7, daisy:26, ruby:18, honey:11, tilly:40, lulu:4, aurora:300, poppy:75};
+
+/* ---------- utilities ---------- */
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function nz(id,lact,dim){const r=rng(hash(id+':'+lact+':'+dim));return (r()+r()+r()-1.5)*0.075}
+const $ = s => document.querySelector(s);
+const fmt$ = (v,d=0) => (v<0?'−':'')+'A$'+Math.abs(v).toLocaleString('en-AU',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtK = v => Math.abs(v)>=10000 ? (v<0?'−':'')+'A$'+(Math.abs(v)/1000).toFixed(1)+'k' : fmt$(v);
+const fmtN = (v,d=0) => v.toLocaleString('en-AU',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct = (v,d=0) => (v>0?'+':v<0?'−':'')+Math.abs(v*100).toFixed(d)+'%';
+const round50 = v => Math.round(v/50)*50;
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function dateOf(day){const d=new Date(START);d.setDate(d.getDate()+day);return d}
+function season(d){const m=d.getMonth();return m>=8&&m<=10?'Spring flush':m>=11||m<=1?'Summer':m<=4?'Autumn':'Winter'}
+function nlis(c){const r=rng(hash(c.id+'nlis'));const L='ABCDEFGHJKLMNPRSTUVWXYZ';const p=()=>L[Math.floor(r()*L.length)];const st={'VIC':'3','NSW':'2','QLD':'Q','SA':'S','WA':'W','TAS':'T'}[c.region.split(', ')[1]]||'3';return st+p()+p()+p()+p()+Math.floor(100+r()*899)+'X'+p()+p()+String(Math.floor(r()*99999)).padStart(5,'0')}
+
+/* ---------- state ---------- */
+let S;
+function freshState(){
+  const cows = BASE_COWS.map(c=>({...c, lact0:c.lact, hist:[], calves:[], sireChoice:null, health:0, collarUnlocked:false}));
+  const now = Date.now();
+  cows.filter(c=>c.owned).forEach(c=>{ c.paid = round50(ltv(c,false,defaultParams()).total*0.8) });
+  const auctions = {};
+  cows.filter(c=>!c.owned).forEach(c=>{
+    const fair = ltv(c,false,defaultParams()).total;
+    const r = rng(hash(c.id+'px'));
+    const open = round50(fair*(0.70+r()*0.08));
+    auctions[c.id] = {cur:open, leader: BOTS[Math.floor(r()*BOTS.length)], bids:[], endsAt: now + AUCTION_MIN[c.id]*60000, status:'live', ceil: round50(fair*(0.86+r()*0.1))};
+    auctions[c.id].bids.push({who:auctions[c.id].leader, amt:open, day:0});
+  });
+  const s = {v:1, day:0, wallet:60000, params:defaultParams(), dec:{feed:0, supp:false, collar:false, done:{}}, cows, auctions, hist:[], events:[], badges:{}, alphaStreak:0, bestAlpha:0, checkins:0, queue:['feed','sire:marigold'], seen:{}};
+  S = s;
+  // back-fill 30 days of history for owned cows
+  for(let back=30; back>=1; back--){
+    let L=0, net=0, bench=0;
+    cows.filter(c=>c.owned).forEach(c=>{
+      let lact=c.lact, dim=c.dim-back; if(dim<1){lact--;dim+=CYCLE}
+      const e = dayEcon(c,lact,dim,{noise:true});
+      const b = benchEcon(c,lact,dim);
+      c.hist.push({day:-back, L:e.L, net:e.net}); L+=e.L; net+=e.net; bench+=b.net;
+    });
+    s.hist.push({day:-back, L, net, bench});
+  }
+  s.events.push({day:0, ic:'🐄', t:'Welcome aboard: you own income rights in 3 cows. Four decisions are waiting in your inbox.'});
+  return s;
+}
+function defaultParams(){return {...PRESETS.south, preset:'south', cull:20, disc:9, dryCost:3.2}}
+
+/* ---------- lactation & economics ---------- */
+function wood(dim, peak){ if(dim<1||dim>LACT) return 0; const b=0.2,c=0.004; const a=peak/(Math.pow(50,b)*Math.exp(-b)); return a*Math.pow(dim,b)*Math.exp(-c*dim) }
+function cowPeak(c, lact){ return c.peak*LM[Math.min(lact,6)]/LM[c.lact0] }
+function params(){ return S ? S.params : defaultParams() }
+
+function dayEcon(c, lact, dim, o={}, P=params()){
+  const milking = dim>=1 && dim<=LACT;
+  let Lb = milking ? wood(dim, cowPeak(c,lact)) : 0;
+  if(o.noise && milking) Lb *= 1+nz(c.id,lact,dim);
+  let L = Lb, fat=c.fat, prot=c.prot;
+  const direct = {feedTop:0, supp:0, collar:0};
+  if(o.mods && c.owned){
+    const d = o.dec || S.dec;
+    if(d.collar){ direct.collar = COLLAR_DAY; if(milking) L += 0.3 }
+    if(milking){ const f=FEED[d.feed]; L += f.dL; direct.feedTop = f.kg*GRAIN;
+      if(d.supp){ L += SUPP_L; fat += SUPP_FAT; direct.supp = SUPP_DAY } }
+  }
+  if(o.healthFactor) L *= o.healthFactor;
+  const kgMS = L*1.03*(fat+prot)/100;
+  const gross = kgMS*P.price;
+  const grossB = Lb*1.03*(c.fat+c.prot)/100*P.price;
+  const base = {};
+  COSTS.forEach(([k])=> base[k] = milking ? grossB*P[k]/100 : 0);
+  base.dry = milking ? 0 : P.dryCost;       // dry-cow upkeep
+  const mgmt = gross*P.mgmt/100;
+  const costSum = Object.values(base).reduce((a,b)=>a+b,0) + direct.feedTop + direct.supp + direct.collar + mgmt;
+  return {milking, L, kgMS, gross, base, direct, mgmt, net: gross-costSum, fat, prot};
+}
+function benchEcon(c, lact, dim){ // average herd-mate: same breed & stage, herd-average genetics (peak ×0.88)
+  const ghost = {...c, owned:false, elite:false};
+  ghost.peak = (c.breed==='Jersey' ? 23 : c.breed==='Holstein' ? 32 : 29.5) * LM[c.lact0];
+  return dayEcon(ghost, lact, dim, {});
+}
+function embDaily(c){ if(!c.elite) return 0; const price = 700+(c.bpi-300)*3; return 12*price*0.5/365 }
+function sireOf(c){ return c.sireChoice ? BULLS[c.sireChoice] : CONV }
+function calfEV(c, sire, dec){
+  const s = sire || CONV;
+  const conc = Math.min(0.9, s.conc + (c.owned && (dec||S?.dec||{}).collar ? 0.06 : 0));
+  const heiferP = s.sexed ? conc*0.9 + (1-conc)*0.47 : 0.47;
+  const bpiAvg = (c.bpi + s.bpi)/2;
+  const hv = c.elite ? 2400 + (bpiAvg-300)*6 : 550 + (bpiAvg-300)*1.6;
+  const bv = 90;
+  return {conc, heiferP, hv, bv, ev: heiferP*hv + (1-heiferP)*bv, straws: Math.min(3,1/conc), strawCost: s.straw*Math.min(3,1/conc)};
+}
+function ltv(c, withMods, P=params(), dec){
+  const d = dec || (S && S.dec) || {feed:0,supp:false,collar:false};
+  const cull = (P.cull - (withMods && c.owned && d.collar ? 4 : 0))/100;
+  const k = (1-cull)/(1+P.disc/100);
+  let lact=c.lact, dim=c.dim, t=0, first=true, uptime=0, next12=0;
+  const parts = {milk:0, calves:0, embryo:0, salvage:0};
+  while(t < CYCLE*7){
+    t++; dim++;
+    if(dim > CYCLE){ lact++; dim=1; if(lact>MAXL) break;
+      const ev = first ? calfEV(c, withMods ? sireOf(c) : (c.owned ? sireOf(c) : CONV), d).ev : calfEV(c, CONV, d).ev;
+      parts.calves += ev*Math.pow(k,t/365); first=false;
+      if(t<=365) next12 += ev;
+    }
+    const e = dayEcon(c, lact, dim, {mods:withMods, dec:d}, P);
+    const df = Math.pow(k, t/365);
+    parts.milk += e.net*df;
+    if(c.elite && e.milking){ parts.embryo += embDaily(c)*CYCLE/LACT*df; if(t<=365) next12 += embDaily(c)*CYCLE/LACT }
+    if(t<=365){ next12 += e.net; if(e.milking) uptime++ }
+  }
+  parts.salvage = 1300*Math.pow(k,t/365);
+  const total = parts.milk+parts.calves+parts.embryo+parts.salvage;
+  return {total, parts, uptime: uptime/365, years: t/365, next12, lactLeft: Math.max(0,MAXL-c.lact) + (c.dim<=LACT ? (LACT-c.dim)/LACT : 0)};
+}
+function t12m(c, P=params()){
+  let lact=c.lact, dim=c.dim, net=0, calves=0, emb=0, L=0;
+  for(let i=0;i<365;i++){
+    const e = dayEcon(c,lact,dim,{noise:true},P);
+    net += e.net; L += e.L;
+    if(c.elite && e.milking) emb += embDaily(c)*CYCLE/LACT;
+    dim--; if(dim<1){ lact--; dim=CYCLE; if(lact<1) break; calves += calfEV(c,CONV).ev }
+  }
+  return {net: net+calves+emb, milkNet:net, calves, emb, L};
+}
+/* earnings-weighted DIM: how deep into lactation today's earnings are (analogue of Royalty Exchange 'Dollar Age') */
+function dimAge(cows){ let w=0,s=0; cows.forEach(c=>{const e=dayEcon(c,c.lact,c.dim,{mods:true}); if(e.net>0){w+=e.net; s+=e.net*c.dim}}); return w? s/w : 0 }
+
+/* projection of P&L components for N days */
+function project(c, days, withMods, P=params()){
+  let lact=c.lact, dim=c.dim;
+  const r = {L:0, milk:0, calves:0, embryo:0, base:{feed:0,labour:0,vet:0,util:0,other:0,dry:0}, feedTop:0, supp:0, collar:0, semen:0, mgmt:0};
+  if(withMods && c.owned && c.sireChoice) r.semen += calfEV(c,sireOf(c)).strawCost;
+  let first = true;
+  for(let t=1;t<=days;t++){
+    dim++; if(dim>CYCLE){ lact++; dim=1; if(lact>MAXL) break; r.calves += calfEV(c, first && withMods ? sireOf(c) : CONV).ev; first=false }
+    const e = dayEcon(c,lact,dim,{mods:withMods},P);
+    r.L += e.L; r.milk += e.gross; r.mgmt += e.mgmt;
+    for(const k in e.base) r.base[k] += e.base[k];
+    r.feedTop += e.direct.feedTop; r.supp += e.direct.supp; r.collar += e.direct.collar;
+    if(c.elite && e.milking) r.embryo += embDaily(c)*CYCLE/LACT;
+  }
+  return r;
+}
+
+/* ============================================================
+   RENDER: hide swatch avatar
+   ============================================================ */
+function hideSVG(c){
+  const r = rng(hash(c.id+'hide'));
+  const scheme = {Holstein:['#F7F5F0','#141414'], Jersey:['#B9854E','#6B4424'], Illawarra:['#8E3B22','#F2EDE6'], 'Aussie Red':['#9C3F21','#F4EEE6']}[c.breed];
+  let blobs = '';
+  const n = c.breed==='Jersey' ? 3 : c.breed==='Holstein' ? 5 : 4;
+  for(let i=0;i<n;i++){
+    const cx=r()*100, cy=r()*100, rr = c.breed==='Holstein' ? 16+r()*20 : 6+r()*12;
+    let d=''; const pts=9;
+    for(let j=0;j<pts;j++){ const a=j/pts*Math.PI*2; const rad=rr*(0.7+r()*0.5); d+=(j?'L':'M')+(cx+Math.cos(a)*rad).toFixed(1)+' '+(cy+Math.sin(a)*rad).toFixed(1) }
+    blobs += `<path d="${d}Z" fill="${scheme[1]}" opacity="${c.breed==='Jersey'?0.35:1}" stroke="${scheme[1]}" stroke-width="6" stroke-linejoin="round"/>`;
+  }
+  return `<div class="hide"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="${scheme[0]}"/>${blobs}</svg><span class="tag">${String(hash(c.id)%900+100)}</span></div>`;
+}
+
+/* ============================================================
+   MARKET
+   ============================================================ */
+let mktBreed = 'All', mktSort = 'ending';
+function cowToday(c){ return dayEcon(c,c.lact,c.dim,{noise:true, mods:c.owned}) }
+function renderMarket(){
+  const market = S.cows.filter(c=>S.auctions[c.id]);
+  const live = market.filter(c=>S.auctions[c.id].status==='live');
+  const mults = live.map(c=>S.auctions[c.id].cur/t12m(c).net).sort((a,b)=>a-b);
+  const med = mults.length ? mults[Math.floor(mults.length/2)] : 0;
+  const vol = live.reduce((a,c)=>a+S.auctions[c.id].cur,0);
+  $('#mktStats').innerHTML = `
+    <div><b>${live.length}</b><span>live auctions</span></div>
+    <div><b>${med.toFixed(1)}×</b><span>median Moo-ltiple</span></div>
+    <div><b>${fmtK(vol)}</b><span>current bids</span></div>`;
+  const breeds = ['All','Holstein','Jersey','Illawarra','Aussie Red','Elite'];
+  $('#mktFilters').innerHTML = breeds.map(b=>`<button class="chip" data-breed="${b}" aria-pressed="${mktBreed===b}">${b==='Elite'?'Elite · embryos':b}</button>`).join('') +
+    `<select id="mktSort" aria-label="Sort listings">
+      ${[['ending','Ending soonest'],['mult','Lowest Moo-ltiple'],['yield','Highest yield today'],['ltv','Most LTV-L per $']].map(([v,l])=>`<option value="${v}" ${mktSort===v?'selected':''}>${l}</option>`).join('')}
+    </select>`;
+  let list = market.filter(c=> mktBreed==='All' || (mktBreed==='Elite' ? c.elite : c.breed===mktBreed));
+  const info = new Map(list.map(c=>[c.id,{t:t12m(c), l:ltv(c,false), e:cowToday(c), b:benchEcon(c,c.lact,c.dim)}]));
+  const a = c=>S.auctions[c.id];
+  list.sort((x,y)=>{
+    const lx=a(x).status!=='live', ly=a(y).status!=='live'; if(lx!==ly) return lx-ly;
+    if(mktSort==='ending') return a(x).endsAt-a(y).endsAt;
+    if(mktSort==='mult') return a(x).cur/info.get(x.id).t.net - a(y).cur/info.get(y.id).t.net;
+    if(mktSort==='yield') return info.get(y.id).e.L - info.get(x.id).e.L;
+    return info.get(y.id).l.total/a(y).cur - info.get(x.id).l.total/a(x).cur;
+  });
+  $('#mktGrid').innerHTML = list.map(c=>{
+    const au=a(c), i=info.get(c.id), m=au.cur/i.t.net;
+    const alpha = i.b.L>0 ? i.e.L/i.b.L-1 : 0;
+    const leftPct = Math.min(100, i.l.lactLeft/MAXL*100);
+    const status = au.status==='live' ? `<span class="cd" data-ends="${au.endsAt}"></span>` : au.status==='won' ? `<span class="pill good">Won</span>` : `<span class="pill">Sold</span>`;
+    return `<article class="card ${au.status!=='live'?'sold':''}">
+      <div class="c-head">${hideSVG(c)}<div><h3>${esc(c.name)}</h3><div class="sub">${c.breed} · ${esc(c.region)}</div></div></div>
+      <div class="pills">
+        <span class="pill">Lact ${c.lact}</span><span class="pill">${c.dim<=LACT?'DIM '+c.dim:'Dry · calves in '+(CYCLE-c.dim)+'d'}</span>
+        <span class="pill">BPI ${c.bpi}</span><span class="pill">${c.cls}</span>
+        ${c.elite?'<span class="pill elite">Elite · IVF embryos</span>':''}
+      </div>
+      <div class="today">${i.e.milking?`<b class="num">${i.e.L.toFixed(1)} L</b><span class="${alpha>=0?'pos':'neg'}">${pct(alpha)} vs herd-mates today</span>`:`<b class="num">0.0 L</b><span class="muted">dry period</span>`}</div>
+      <div class="kv3">
+        <div><span>T12M net</span><b>${fmt$(i.t.net)}</b></div>
+        <div><span>Moo-ltiple</span><b>${m>50?'>50':m.toFixed(1)}×</b></div>
+        <div><span>LTV-L</span><b>${fmtK(i.l.total)}</b></div>
+      </div>
+      <div class="left"><div class="bar"><i style="width:${leftPct}%"></i></div><small><span>Lactation left</span><span>${i.l.lactLeft.toFixed(1)} of ${MAXL}</span></small></div>
+      <div class="c-foot">
+        <div class="bid"><span>${au.status==='live'?(au.leader==='you'?'<span class="lead-you">You lead</span>':'Current bid'):'Final'}</span><b class="num">${fmt$(au.cur)}</b></div>
+        ${status}
+        <button class="btn btn-sm" data-cow="${c.id}">${au.status==='live'?'View & bid':'View'}</button>
+      </div>
+    </article>`;
+  }).join('');
+  tickCountdowns();
+}
+
+/* ============================================================
+   COW DRAWER
+   ============================================================ */
+let openId = null;
+function openCow(id){ openId=id; renderCow(); $('#drawer').classList.add('on'); $('#scrim').classList.add('on'); $('#drawer').scrollTop=0; setTimeout(()=>$('#drawer .x')?.focus(),50) }
+function closeCow(){ openId=null; $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on') }
+function renderCow(){
+  if(!openId) return;
+  const c = S.cows.find(x=>x.id===openId); const au = S.auctions[c.id];
+  const e = cowToday(c), b = benchEcon(c,c.lact,c.dim), t = t12m(c), l = ltv(c,c.owned), price = c.owned ? c.paid : au.cur;
+  const fwd = price / l.next12;
+  const P = S.params;
+  const ownedEarn = c.hist.filter(h=>h.day>0).reduce((a,h)=>a+h.net,0);
+  const alpha = b.L>0 ? e.L/b.L-1 : 0;
+  const cull = P.cull - (c.owned&&S.dec.collar?4:0);
+  const ce = calfEV(c, sireOf(c));
+  $('#drawer').innerHTML = `<div class="d-in">
+    <div class="d-head">${hideSVG(c)}<div>
+      <div class="eyebrow">${c.breed} · ${esc(c.farm)}</div>
+      <h2>${esc(c.name)}</h2>
+      <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="nlis" title="National Livestock Identification System tag">NLIS ${nlis(c)}</span>${c.elite?'<span class="pill elite">Elite · IVF embryos</span>':''}${c.owned?'<span class="pill good">In your herd</span>':''}</div>
+    </div><button class="btn btn-sm x" id="closeD" aria-label="Close">✕</button></div>
+
+    <div class="tiles">
+      <div class="tile"><span>Today</span><b>${e.L.toFixed(1)} L</b><small class="${alpha>=0?'pos':'neg'}">${e.milking?pct(alpha)+' vs herd-mates':'dry period'}</small></div>
+      <div class="tile"><span>T12M net</span><b>${fmt$(t.net)}</b><small>${fmtN(t.L)} L last 12 mo</small></div>
+      <div class="tile"><span>Moo-ltiple</span><b>${(price/t.net)>50?'>50':(price/t.net).toFixed(1)}×</b><small>fwd ${fwd.toFixed(1)}× next 12 mo</small></div>
+      <div class="tile"><span>LTV-L</span><b>${fmtK(l.total)}</b><small>${l.years.toFixed(1)} yrs of earnings left</small></div>
+      <div class="tile"><span>Udder Uptime</span><b>${Math.round(l.uptime*100)}%</b><small>days milking, next 12 mo</small></div>
+      <div class="tile"><span>Cull Churn</span><b>${cull}%/yr</b><small>${c.owned&&S.dec.collar?'collar −4 pts':'regional avg'}</small></div>
+      <div class="tile"><span>Coverage</span><b>${(l.total/price).toFixed(2)}×</b><small>LTV-L ÷ price</small></div>
+      <div class="tile"><span>Moo-back</span><b>${(price/(l.next12/12)).toFixed(0)} mo</b><small>payback at fwd run-rate</small></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><h2>Lactation ${c.lact} curve</h2><span class="muted">litres/day by days in milk</span></div>
+      <div class="legend"><span><i style="border-color:var(--series)"></i>Actual</span><span><i style="border-color:var(--series);border-top-style:dashed"></i>Projected</span><span><i style="border-color:var(--bench);border-top-style:dashed"></i>Herd-mate benchmark</span></div>
+      <div class="chart" id="lactChart"></div>
+      ${c.owned&&S.dec.collar?`<div class="pills" style="margin-top:8px"><span class="pill good">Collar live</span><span class="pill">Rumination ${Math.round(470+nz(c.id,9,S.day)*400)} min/day</span><span class="pill">Activity ${Math.round(100+nz(c.id,8,S.day)*300)}% of baseline</span><span class="pill">Next heat ≈ day ${(c.dim<80?80-c.dim:21-((c.dim-80)%21))} from now</span></div>`:''}
+    </div>
+
+    ${c.owned ? `<div class="bidbox"><div class="panel-h" style="margin:0"><h2>Your position</h2><span class="muted">since day ${c.boughtDay??'−30'}</span></div>
+      <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+        <div class="tile"><span>Paid</span><b>${fmt$(c.paid)}</b></div>
+        <div class="tile"><span>Earned (in demo)</span><b class="pos">${fmt$(ownedEarn)}</b></div>
+        <div class="tile"><span>Next calf sire</span><b style="font-size:13px">${esc(sireOf(c).name)}</b><small>${Math.round(ce.heiferP*100)}% heifer chance</small></div>
+      </div></div>` : bidBox(c,au)}
+
+    <div class="panel">
+      <h2>How today's cheque is built</h2>
+      <div class="math">${e.L.toFixed(1)} L × 1.03 kg/L × (${e.fat.toFixed(2)}% fat + ${e.prot.toFixed(2)}% protein) = <b>${e.kgMS.toFixed(2)} kg MS</b><br>
+      ${e.kgMS.toFixed(2)} kg MS × A$${P.price.toFixed(2)}/kg MS = <b>${fmt$(e.gross,2)} gross</b> (${e.L>0?(e.gross/e.L*100).toFixed(0):0}¢/L)<br>
+      − operating costs ${fmt$(Object.values(e.base).reduce((a,b)=>a+b,0),2)} − decisions ${fmt$(e.direct.feedTop+e.direct.supp+e.direct.collar,2)} − mgmt fee ${fmt$(e.mgmt,2)} = <b>${fmt$(e.net,2)} net</b></div>
+    </div>
+
+    <div class="panel">
+      <h2>What LTV-L is made of</h2>
+      <div class="tbl-wrap"><table>
+        <tr><th>Component</th><th class="r">Present value</th><th>Basis</th></tr>
+        <tr><td>Milk (net)</td><td class="r num">${fmt$(l.parts.milk)}</td><td class="muted">remaining ${l.lactLeft.toFixed(1)} lactations on a Wood curve, 305 days in milk + 60 dry</td></tr>
+        <tr><td>Calves</td><td class="r num">${fmt$(l.parts.calves)}</td><td class="muted">${c.elite?'retained daughters valued at first calving':'heifer calves ≈ '+fmt$(calfEV(c,CONV).hv)+', bull calves '+fmt$(90)}</td></tr>
+        ${c.elite?`<tr><td>IVF embryos</td><td class="r num">${fmt$(l.parts.embryo)}</td><td class="muted">~12 grade-1 embryos/yr × ${fmt$(700+(c.bpi-300)*3)}, 50% net of OPU/IVF costs</td></tr>`:''}
+        <tr><td>Salvage (cull cow)</td><td class="r num">${fmt$(l.parts.salvage)}</td><td class="muted">≈ A$1,300 at the end of her productive life</td></tr>
+        <tr><td><b>LTV-L</b></td><td class="r num"><b>${fmt$(l.total)}</b></td><td class="muted">discounted at ${P.disc}% and ${cull}% annual cull risk</td></tr>
+      </table></div>
+    </div>
+
+    <div class="panel">
+      <h2>Genetics &amp; pedigree</h2>
+      <div class="gen">
+        <div><span>Sire</span><b>${esc(c.sire)}</b></div><div><span>Dam</span><b>${esc(c.dam)}</b></div>
+        <div><span>Balanced Performance Index</span><b class="num">${c.bpi}</b></div><div><span>Classification</span><b>${c.cls}</b></div>
+        <div><span>Fat / Protein</span><b class="num">${c.fat.toFixed(1)}% / ${c.prot.toFixed(1)}%</b></div><div><span>Peak yield (this lact.)</span><b class="num">${cowPeak(c,c.lact).toFixed(1)} L</b></div>
+        <div><span>Lactation</span><b>${c.lact} of ~${MAXL}</b></div><div><span>Region</span><b>${esc(c.region)}</b></div>
+      </div>
+      ${c.calves.length?`<h3 style="font-size:14px;margin:12px 0 6px">Calves born in your herd</h3><div class="pills">${c.calves.map(k=>`<span class="pill ${k.sex==='Heifer'?'good':''}">${k.sex} · day ${k.day} · ${fmt$(k.value)}</span>`).join('')}</div>`:''}
+    </div>
+  </div>`;
+  lactChart($('#lactChart'), c);
+  tickCountdowns();
+}
+function minInc(cur){ return Math.max(100, round50(cur*0.025)) }
+function bidBox(c, au){
+  if(au.status!=='live') return `<div class="bidbox"><h2>Auction closed</h2><p class="muted" style="margin:0">${au.status==='won'?'You won this auction.':'Sold to '+esc(au.leader)+' for '+fmt$(au.cur)+'.'}</p></div>`;
+  const next = au.cur + minInc(au.cur);
+  return `<div class="bidbox">
+    <div class="panel-h" style="margin:0"><h2>Place a bid</h2><span class="cd" data-ends="${au.endsAt}"></span></div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap">
+      <div><div class="eyebrow">Current bid</div><b class="num" style="font-size:24px">${fmt$(au.cur)}</b> <span class="${au.leader==='you'?'lead-you':'muted'}">${au.leader==='you'?'you lead':'by '+esc(au.leader)}</span></div>
+      <div><div class="eyebrow">Implied yield (T12M)</div><b class="num" style="font-size:24px">${(t12m(c).net/au.cur*100).toFixed(1)}%</b></div>
+    </div>
+    <form class="bidrow" id="bidForm">
+      <label class="muted" for="bidAmt" style="flex-basis:100%;font-size:12px">Minimum ${fmt$(next)} · wallet ${fmt$(S.wallet)} · bids in the last 60 s extend the auction</label>
+      <input id="bidAmt" inputmode="numeric" value="${next}" aria-label="Bid amount in A$">
+      <button class="btn btn-primary" type="submit">Bid</button>
+      <button class="btn" type="button" id="quickBid">Bid ${fmt$(next)}</button>
+    </form>
+    <div class="bids">${au.bids.slice(-6).reverse().map(x=>`<div><span class="${x.who==='you'?'lead-you':''}">${esc(x.who)}</span><span class="num">${fmt$(x.amt)}</span></div>`).join('')}</div>
+  </div>`;
+}
+function placeBid(id, amt){
+  const au = S.auctions[id]; if(!au || au.status!=='live') return;
+  const need = au.cur + minInc(au.cur);
+  if(!(amt>=need)) return toast(`Bid at least ${fmt$(need)}.`);
+  if(amt > S.wallet) return toast(`That's more than your wallet (${fmt$(S.wallet)}). Lower the bid or sell a holding.`);
+  au.cur = round50(amt); au.leader='you'; au.bids.push({who:'you', amt:au.cur, day:S.day});
+  if(au.endsAt - Date.now() < 60000) au.endsAt = Date.now()+60000;
+  S.badges.firstBid = S.badges.firstBid || S.day+1;
+  save(); toast(`Bid placed: ${fmt$(au.cur)}. You lead.`); renderAll();
+}
+
+/* ============================================================
+   CHARTS (hand-built SVG)
+   ============================================================ */
+const tip = $('#tip');
+function showTip(ev, html){ tip.innerHTML=html; tip.classList.add('on'); const x=Math.min(ev.clientX+14, innerWidth-tip.offsetWidth-8); const y=Math.max(8, ev.clientY-tip.offsetHeight-12); tip.style.left=x+'px'; tip.style.top=y+'px' }
+function hideTip(){ tip.classList.remove('on') }
+function niceMax(v, step){ return Math.ceil(v/step)*step }
+
+function lactChart(el, c){
+  const W=640,H=250,pl=34,pr=12,pt=12,pb=26, iw=W-pl-pr, ih=H-pt-pb;
+  const peak=cowPeak(c,c.lact); const bpeak = benchEcon(c,c.lact,50).L;
+  const ymax = niceMax(Math.max(peak,bpeak)*1.25+ (c.owned?FEED[S.dec.feed].dL+2:0), 10);
+  const x = d => pl + (d/CYCLE)*iw, y = v => pt + ih - v/ymax*ih;
+  const act=[], proj=[], ben=[];
+  for(let d=1; d<=CYCLE; d++){
+    const bL = benchEcon(c,c.lact,d).L; ben.push([d,bL]);
+    const hist = c.hist.find(h=>h.day===S.day-(c.dim-d) && h.lact===c.lact);
+    if(d<=c.dim){ const v = hist ? hist.L : dayEcon(c,c.lact,d,{noise:true}).L; act.push([d,v]) }
+    if(d>=c.dim && d<=LACT) proj.push([d, dayEcon(c,c.lact,d,{mods:c.owned}).L]);
+  }
+  const path = pts => pts.map((p,i)=>(i?'L':'M')+x(p[0]).toFixed(1)+' '+y(p[1]).toFixed(1)).join('');
+  let grid=''; for(let v=0; v<=ymax; v+=10){ grid+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y(v)+3.5}" text-anchor="end">${v}</text>` }
+  let xt=''; [0,60,120,180,240,305,365].forEach(d=> xt+=`<text x="${x(d)}" y="${H-8}" text-anchor="middle">${d}</text>`);
+  const todayV = c.dim<=CYCLE ? (act.length?act[act.length-1][1]:0) : 0;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Lactation curve for ${esc(c.name)}">
+    <rect x="${x(LACT)}" y="${pt}" width="${x(CYCLE)-x(LACT)}" height="${ih}" fill="var(--surface-2)"/>
+    <text x="${(x(LACT)+x(CYCLE))/2}" y="${pt+14}" text-anchor="middle">Dry</text>
+    ${grid}${xt}
+    <path d="${path(ben)}" fill="none" stroke="var(--bench)" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <path d="${path(act)} L ${x(c.dim)} ${y(0)} L ${x(1)} ${y(0)} Z" fill="var(--series)" opacity=".10"/>
+    <path d="${path(act)}" fill="none" stroke="var(--series)" stroke-width="2"/>
+    <path d="${path(proj)}" fill="none" stroke="var(--series)" stroke-width="2" stroke-dasharray="5 4" opacity=".85"/>
+    <line x1="${x(c.dim)}" x2="${x(c.dim)}" y1="${pt}" y2="${pt+ih}" stroke="var(--ink-2)" stroke-dasharray="2 3"/>
+    <circle cx="${x(Math.min(c.dim,CYCLE))}" cy="${y(todayV)}" r="5" fill="var(--series)" stroke="var(--surface)" stroke-width="2"/>
+    <text x="${x(c.dim)+6}" y="${pt+10}" style="fill:var(--ink-2)">Today · DIM ${c.dim}</text>
+    <line id="lcx" x1="0" x2="0" y1="${pt}" y2="${pt+ih}" stroke="var(--ink)" opacity="0"/>
+    <rect x="${pl}" y="${pt}" width="${iw}" height="${ih}" fill="transparent" id="lhit"/>
+  </svg>`;
+  const svg = el.querySelector('svg'), cx = el.querySelector('#lcx');
+  el.querySelector('#lhit').addEventListener('pointermove', ev=>{
+    const r = svg.getBoundingClientRect(); const px = (ev.clientX-r.left)/r.width*W;
+    const d = Math.max(1, Math.min(CYCLE, Math.round((px-pl)/iw*CYCLE)));
+    cx.setAttribute('x1',x(d)); cx.setAttribute('x2',x(d)); cx.setAttribute('opacity',.35);
+    const a = act.find(p=>p[0]===d), p = proj.find(p=>p[0]===d), bb = ben[d-1];
+    showTip(ev, `DIM <b>${d}</b>${d>LACT?' · dry':''}<br>${a?'Actual <b>'+a[1].toFixed(1)+' L</b><br>':''}${p&&!a?'Projected <b>'+p[1].toFixed(1)+' L</b><br>':''}Herd-mate <b>${bb[1].toFixed(1)} L</b>`);
+  });
+  el.querySelector('#lhit').addEventListener('pointerleave', ()=>{ hideTip(); cx.setAttribute('opacity',0) });
+}
+
+function earnChart(el){
+  const data = S.hist.slice(-30);
+  const W=640,H=210,pl=40,pr=10,pt=10,pb=24, iw=W-pl-pr, ih=H-pt-pb;
+  const vals = data.flatMap(d=>[d.net,d.bench]);
+  const lo = Math.min(0,...vals), hi = Math.max(...vals);
+  const step = hi>60?20:10; const ymax = niceMax(hi*1.1,step), ymin = lo<0 ? -niceMax(-lo,step) : 0;
+  const y = v => pt + ih - (v-ymin)/(ymax-ymin)*ih;
+  const bw = iw/data.length;
+  let g=''; for(let v=ymin; v<=ymax; v+=step){ g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y(v)+3.5}" text-anchor="end">${v<0?'−':''}$${Math.abs(v)}</text>` }
+  let bars='', hits='';
+  data.forEach((d,i)=>{
+    const x0 = pl+i*bw+1, w=Math.max(2,bw-2), top=y(Math.max(0,d.net)), bot=y(Math.min(0,d.net));
+    const beat = d.net>=d.bench;
+    bars += `<rect x="${x0}" y="${top}" width="${w}" height="${Math.max(1,bot-top)}" rx="2" fill="var(--series)" opacity="${d.day>0?1:.55}"/>`;
+    if(beat && d.day>0) bars += `<circle cx="${x0+w/2}" cy="${top-5}" r="2" fill="var(--gold)"/>`;
+    hits += `<rect x="${pl+i*bw}" y="${pt}" width="${bw}" height="${ih}" fill="transparent" data-i="${i}"/>`;
+  });
+  const bl = data.map((d,i)=>(i?'L':'M')+(pl+i*bw+bw/2).toFixed(1)+' '+y(d.bench).toFixed(1)).join('');
+  let xt=''; data.forEach((d,i)=>{ if(i%7===0||(i===data.length-1&&i%7>3)){ const dt=dateOf(d.day); xt+=`<text x="${pl+i*bw+bw/2}" y="${H-6}" text-anchor="middle">${dt.getDate()} ${dt.toLocaleString('en-AU',{month:'short'})}</text>` }});
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily net earnings, last 30 days">${g}${bars}<path d="${bl}" fill="none" stroke="var(--bench)" stroke-width="1.5" stroke-dasharray="4 4"/>${xt}${hits}</svg>`;
+  el.querySelectorAll('[data-i]').forEach(r=>{
+    r.addEventListener('pointermove', ev=>{ const d=data[+r.dataset.i]; const dt=dateOf(d.day);
+      showTip(ev, `${dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}${d.day<=0?' · before demo':''}<br>Net <b>${fmt$(d.net,2)}</b> · ${fmtN(d.L,1)} L<br>Benchmark <b>${fmt$(d.bench,2)}</b> ${d.net>=d.bench?'<br>★ beat the herd':''}`) });
+    r.addEventListener('pointerleave', hideTip);
+  });
+}
+
+function wfChart(el, rows){ // rows: [{label, v, kind:'rev'|'cost'|'net'}]
+  const W=640, rowH=26, pl=170, pr=70, pt=6, H=pt+rows.length*rowH+18, iw=W-pl-pr;
+  let run=0; const segs = rows.map(r=>{ if(r.kind==='net'){ return {...r, a:0, b:r.v} } const a=run; run += r.kind==='cost'?-r.v:r.v; return {...r, a, b:run} });
+  const hi = Math.max(...segs.map(s=>Math.max(s.a,s.b))), lo = Math.min(0,...segs.map(s=>Math.min(s.a,s.b)));
+  const x = v => pl + (v-lo)/(hi-lo||1)*iw;
+  let out='';
+  segs.forEach((s,i)=>{
+    const y0=pt+i*rowH+5, h=rowH-10, x0=x(Math.min(s.a,s.b)), x1=x(Math.max(s.a,s.b));
+    const fill = s.kind==='cost' ? 'var(--cost)' : s.kind==='net' ? (s.v>=0?'var(--good)':'var(--bad)') : 'var(--series)';
+    out += `<text x="${pl-10}" y="${y0+h/2+4}" text-anchor="end" style="fill:var(--ink-2);font-size:11.5px">${esc(s.label)}</text>
+      <rect x="${x0}" y="${y0}" width="${Math.max(2,x1-x0)}" height="${h}" rx="3" fill="${fill}" data-i="${i}"/>
+      <text x="${x1+6}" y="${y0+h/2+4}" style="fill:var(--ink);font:600 11px var(--f-mono)">${s.kind==='cost'?'−':''}${fmtK(Math.abs(s.v))}</text>`;
+    if(i<segs.length-1 && s.kind!=='net') out += `<line x1="${x(s.b)}" x2="${x(s.b)}" y1="${y0+h}" y2="${y0+rowH}" stroke="var(--line)"/>`;
+  });
+  out += `<line x1="${x(0)}" x2="${x(0)}" y1="${pt}" y2="${H-14}" stroke="var(--ink-2)" opacity=".4"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Profit and loss waterfall">${out}</svg>`;
+  el.querySelectorAll('rect[data-i]').forEach(r=>{
+    r.addEventListener('pointermove', ev=>{ const s=segs[+r.dataset.i]; showTip(ev, `${esc(s.label)}<br><b>${s.kind==='cost'?'−':''}${fmt$(Math.abs(s.v))}</b>${s.share!=null?' · '+(s.share*100).toFixed(1)+'% of milk revenue':''}`) });
+    r.addEventListener('pointerleave', hideTip);
+  });
+}
+
+/* ============================================================
+   HERD
+   ============================================================ */
+function owned(){ return S.cows.filter(c=>c.owned && !c.retired) }
+function herdMetrics(){
+  const os = owned(); const last30 = S.hist.slice(-30);
+  const net30 = last30.reduce((a,d)=>a+d.net,0), L30 = last30.reduce((a,d)=>a+d.L,0), b30 = last30.reduce((a,d)=>a+d.bench,0);
+  const MRM = net30/last30.length*30.4, ARL = L30/last30.length*365;
+  const lt = os.map(c=>({c, l:ltv(c,true), t:t12m(c)}));
+  const LTV = lt.reduce((a,x)=>a+x.l.total,0), T12 = lt.reduce((a,x)=>a+x.t.net,0), paid = os.reduce((a,c)=>a+c.paid,0);
+  const today = S.hist[S.hist.length-1];
+  const upt = lt.reduce((a,x)=>a+x.l.uptime,0)/(lt.length||1);
+  const alpha7 = (()=>{ const w=S.hist.slice(-7); const n=w.reduce((a,d)=>a+d.net,0), b=w.reduce((a,d)=>a+d.bench,0); return b>0? n/b-1 : 0 })();
+  const cull = S.params.cull - (S.dec.collar?4:0);
+  return {os, MRM, ARL, LTV, T12, paid, today, upt, alpha7, cull, mult: paid/T12, alpha30: b30>0?net30/b30-1:0, dimAge: dimAge(os), lt};
+}
+function renderHerd(){
+  const m = herdMetrics(); const d = dateOf(S.day);
+  const earned = S.hist.filter(h=>h.day>0).reduce((a,h)=>a+h.net,0);
+  const t = m.today; const beat = t.net >= t.bench;
+  $('#herdDrop').innerHTML = `<div class="drop">
+    <div>
+      <div class="lbl">Today's Milk Drop · ${d.toLocaleDateString('en-AU',{weekday:'long', day:'numeric', month:'short'})}</div>
+      <div class="big num">${fmt$(t.net,2)}</div>
+      <div class="streak">${beat?'▲ beat the herd today':'▼ behind the herd today'} · ${S.alphaStreak}-day alpha streak (best ${S.bestAlpha})</div>
+    </div>
+    <div class="drop-stats">
+      <div><b>${fmtN(t.L,1)} L</b><span>shipped today</span></div>
+      <div><b>${pct(t.bench>0?t.net/t.bench-1:0,1)}</b><span>vs herd-mate benchmark</span></div>
+      <div><b>${fmt$(earned)}</b><span>earned since day 1</span></div>
+      <div><b>${S.checkins}</b><span>days checked in</span></div>
+    </div>
+  </div>`;
+  const kp = [
+    ['MRM', fmt$(m.MRM), 'Monthly Recurring Milk: net A$ at your 30-day run-rate', 'Monthly Recurring Milk: your herd\'s net income per month, projected from the last 30 days.'],
+    ['ARL', fmtN(m.ARL)+' L', 'Annual Run-rate Litres', 'Annual Run-rate Litres: litres your cows would ship over a year at the current 30-day pace.'],
+    ['LTV-L', fmtK(m.LTV), `Lifetime Value Left · ${(m.LTV/m.paid).toFixed(2)}× what you paid`, 'Lifetime Value Left: discounted net earnings still ahead (milk, calves, embryos, salvage), after cull risk.'],
+    ['Moo-ltiple', m.mult.toFixed(1)+'×', 'price paid ÷ trailing 12-mo net', 'Moo-ltiple: what you paid divided by trailing 12-month net earnings, the same idea as a royalty multiple.'],
+    ['Herd Alpha', pct(m.alpha7,1), `7-day · 30-day ${pct(m.alpha30,1)}`, 'Herd Alpha: how much more (or less) your cows earned than average herd-mates at the same stage of lactation.'],
+    ['DIM Age', Math.round(m.dimAge)+' days', 'earnings-weighted days in milk', 'DIM Age: how far into their lactations your earnings come from, weighted by today\'s net. Like Royalty Exchange\'s "dollar age": lower means fresher, longer-running income.'],
+    ['Udder Uptime', Math.round(m.upt*100)+'%', 'share of next 12 mo in milk', 'Udder Uptime: the share of the next 12 months your cows will be milking rather than dry.'],
+    ['Cull Churn', m.cull+'%/yr', S.dec.collar?'collar lowers risk by 4 pts':'regional average', 'Cull Churn: annual chance a cow leaves the herd early (mastitis, lameness, infertility). Priced into LTV-L.'],
+  ];
+  $('#herdKpis').innerHTML = kp.map(([k,v,dsc,help])=>`<div class="kpi"><div class="k"><b>${k}</b><button class="info" aria-label="What is ${k}?" data-help="${esc(help)}">i</button></div><div class="v">${v}</div><div class="d">${dsc}</div></div>`).join('');
+  $('#holdSub').textContent = `${m.os.length} cows · ${fmt$(m.paid)} invested`;
+  $('#holdTbl').innerHTML = `<tr><th>Cow</th><th class="r">Today</th><th class="r">vs herd</th><th class="r">Net today</th><th class="r">LTV-L</th><th>Lactation left</th><th class="r">Earned</th></tr>` +
+    m.lt.map(({c,l})=>{ const e=cowToday(c), b=benchEcon(c,c.lact,c.dim), a = b.L>0?e.L/b.L-1:0; const earned=c.hist.filter(h=>h.day>0).reduce((s,h)=>s+h.net,0);
+      return `<tr class="click" data-cow="${c.id}"><td><div class="cowcell">${hideSVG(c)}<div><b>${esc(c.name)}</b><small>${c.breed} · Lact ${c.lact} · ${c.dim<=LACT?'DIM '+c.dim:'dry'}</small></div></div></td>
+      <td class="r num">${e.L.toFixed(1)} L</td><td class="r num ${a>=0?'pos':'neg'}">${e.milking?pct(a):'—'}</td><td class="r num">${fmt$(e.net,2)}</td><td class="r num">${fmtK(l.total)}</td>
+      <td><div class="minibar"><i style="width:${Math.min(100,l.lactLeft/MAXL*100)}%"></i></div></td><td class="r num pos">${fmt$(earned)}</td></tr>` }).join('');
+  earnChart($('#earnChart'));
+  $('#feed').innerHTML = S.events.slice().reverse().slice(0,40).map(ev=>`<div class="ev"><span class="ic" aria-hidden="true">${ev.ic}</span><span>${ev.t}</span><small>${ev.day<=0?'Start':dateOf(ev.day).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</small></div>`).join('');
+  renderDecisions();
+  renderBadges(m);
+  renderLeader(m);
+}
+
+/* ---------- decisions ---------- */
+function marginal(decPatch){
+  // A$/day and LTV-L change for the whole herd vs current decisions
+  const cur = S.dec, nd = {...cur, ...decPatch};
+  let dNet=0, dL=0, dLtv=0;
+  owned().forEach(c=>{
+    const a = dayEcon(c,c.lact,c.dim,{mods:true, dec:cur}), b = dayEcon(c,c.lact,c.dim,{mods:true, dec:nd});
+    dNet += b.net-a.net; dL += b.L-a.L;
+    dLtv += ltv(c,true,S.params,nd).total - ltv(c,true,S.params,cur).total;
+  });
+  return {dNet, dL, dLtv};
+}
+let pending = {};
+function renderDecisions(){
+  const q = S.queue;
+  $('#decSub').textContent = q.length ? `${q.length} waiting` : 'all caught up';
+  const dot = $('#decDot'); dot.hidden = !q.length; dot.textContent = q.length;
+  const cards = q.map(key=>{
+    const isNew = true;
+    if(key==='feed'){
+      const sel = pending.feed ?? S.dec.feed;
+      return `<div class="dec ${isNew?'new':''}"><div class="due">Due before morning milking</div><h3>Spring flush: top up the grain?</h3>
+        <p>Pasture is surging and grain is ${fmt$(GRAIN*1000)}/t delivered. Extra grain in the bail lifts litres, with diminishing returns. Applies to all your milking cows. Impacts shown are per day for your whole herd.</p>
+        <div class="opts">${FEED.map((f,i)=>{ const mg = marginal({feed:i}); return `<button class="opt" data-dec="feed" data-v="${i}" aria-pressed="${sel===i}"><span class="radio"></span><span><b>${f.k}</b><small>${f.note}${f.kg?' · '+fmt$(f.kg*GRAIN,2)+'/cow/day':''}</small></span><span class="imp"><span class="${mg.dL>=0?'':'neg'}">${mg.dL>=0?'+':''}${mg.dL.toFixed(1)} L</span><br><span class="${mg.dNet>=0?'pos':'neg'}">${mg.dNet>=0?'+':'−'}${fmt$(Math.abs(mg.dNet),2)}/day</span></span></button>` }).join('')}</div>
+        <button class="btn btn-primary" data-confirm="feed">Lock in ration</button></div>`;
+    }
+    if(key==='supp'){
+      const sel = pending.supp ?? true; const mg = marginal({supp:true});
+      return `<div class="dec ${isNew?'new':''}"><div class="due">Biotech offer · expires today</div><h3>Add RumenPro live-yeast supplement?</h3>
+        <p>A rumen-stabilising yeast + enzyme blend: roughly +${SUPP_L} L/day and +${SUPP_FAT}% butterfat for ${fmt$(SUPP_DAY,2)}/cow/day. Supplier trial data; results vary by herd.</p>
+        <div class="opts">
+          <button class="opt" data-dec="supp" data-v="1" aria-pressed="${sel===true}"><span class="radio"></span><span><b>Add it</b><small>Applies to cows in milk</small></span><span class="imp">+${mg.dL.toFixed(1)} L<br><span class="${mg.dNet>=0?'pos':'neg'}">${mg.dNet>=0?'+':'−'}${fmt$(Math.abs(mg.dNet),2)}/day</span></span></button>
+          <button class="opt" data-dec="supp" data-v="0" aria-pressed="${sel===false}"><span class="radio"></span><span><b>Skip for now</b><small>Revisit next month</small></span><span class="imp">—</span></button>
+        </div><button class="btn btn-primary" data-confirm="supp">Confirm</button></div>`;
+    }
+    if(key==='collar'){
+      const sel = pending.collar ?? true; const mg = marginal({collar:true});
+      return `<div class="dec ${isNew?'new':''}"><div class="due">New feature</div><h3>Subscribe to PastureSense collars?</h3>
+        <p>Neck collars that track rumination, activity and heats. ${fmt$(5.90,2)}/cow/month. Earlier illness detection cuts cull risk ~4 pts, better heat detection lifts conception ~6 pts, and you unlock live rumination data on every cow page.</p>
+        <div class="opts">
+          <button class="opt" data-dec="collar" data-v="1" aria-pressed="${sel===true}"><span class="radio"></span><span><b>Subscribe</b><small>${fmt$(5.90*owned().length,2)}/month for your herd</small></span><span class="imp"><span class="${mg.dNet>=0?'pos':'neg'}">${mg.dNet>=0?'+':'−'}${fmt$(Math.abs(mg.dNet),2)}/day</span><br><span class="pos">+${fmtK(mg.dLtv)} LTV-L</span></span></button>
+          <button class="opt" data-dec="collar" data-v="0" aria-pressed="${sel===false}"><span class="radio"></span><span><b>No thanks</b><small>Keep paper heat charts</small></span><span class="imp">—</span></button>
+        </div><button class="btn btn-primary" data-confirm="collar">Confirm</button></div>`;
+    }
+    if(key.startsWith('sire:')){
+      const c = S.cows.find(x=>x.id===key.slice(5)); const sel = pending[key] ?? 'maverick';
+      const conv = calfEV(c,CONV);
+      return `<div class="dec ${isNew?'new':''}"><div class="due">${esc(c.name.split(' ').slice(-2).join(' '))} is on heat · AI tech arrives 7am</div><h3>Pick a sexed-semen sire</h3>
+        <p>Sexed semen gives ~90% heifer calves when she conceives. Farm conventional semen: ${Math.round(conv.heiferP*100)}% heifers, calf value ${fmt$(conv.ev)}.</p>
+        <div class="bulls">${Object.values(BULLS).map(bu=>{ const ev=calfEV(c,bu); return `<button class="bull" data-dec="${key}" data-v="${bu.id}" aria-pressed="${sel===bu.id}">
+          <small class="muted">${bu.tag}</small><b>${bu.name}</b><span class="bpi">BPI ${bu.bpi}${bu.rel?` <small class="muted" style="font-size:10px">${bu.rel}</small>`:''}</span>
+          <dl><dt>Milk</dt><dd>${bu.milk}</dd><dt>Fat / Prot</dt><dd>${bu.fat} / ${bu.prot}</dd><dt>Fertility</dt><dd>${bu.fert}</dd><dt>Conception</dt><dd>${Math.round(ev.conc*100)}%</dd><dt>Straw</dt><dd>${fmt$(bu.straw)}</dd><dt>Heifer odds</dt><dd>${Math.round(ev.heiferP*100)}%</dd><dt>Calf EV</dt><dd class="pos">${fmt$(ev.ev)}</dd></dl>
+        </button>` }).join('')}</div>
+        <button class="btn btn-primary" data-confirm="${key}">Book the AI tech</button></div>`;
+    }
+    return '';
+  });
+  const done = [];
+  if(S.dec.done.feed) done.push(`Ration: <b>${FEED[S.dec.feed].k}</b>`);
+  if(S.dec.done.supp) done.push(`RumenPro: <b>${S.dec.supp?'on':'off'}</b>`);
+  if(S.dec.done.collar) done.push(`Collars: <b>${S.dec.collar?'subscribed':'none'}</b>`);
+  S.cows.filter(c=>c.owned&&c.sireChoice).forEach(c=>done.push(`${esc(c.name.split(' ').slice(-2).join(' '))} → <b>${BULLS[c.sireChoice].name.split(' ')[1]}</b>`));
+  $('#decList').innerHTML = cards.join('') + (done.length?`<div class="done">✓ ${done.join(' · ')}${S.dec.done.feed||S.dec.done.supp||S.dec.done.collar?' <button class="btn btn-sm btn-ghost" id="revisit">Change</button>':''}</div>`:'') + (!q.length?'<p class="muted" style="margin:0">Nothing needs you right now. New calls come in as your cows move through their lactations.</p>':'');
+}
+function confirmDecision(key){
+  if(key==='feed'){ S.dec.feed = pending.feed ?? S.dec.feed; S.dec.done.feed=true; log('🌾', `Ration set to <b>${FEED[S.dec.feed].k}</b> for the herd.`) }
+  if(key==='supp'){ S.dec.supp = pending.supp ?? true; S.dec.done.supp=true; log('🧪', S.dec.supp?'RumenPro supplement added to the ration.':'Skipped the RumenPro supplement.') }
+  if(key==='collar'){ S.dec.collar = pending.collar ?? true; S.dec.done.collar=true; if(S.dec.collar){ S.badges.dataCow = S.badges.dataCow||S.day||1; log('📡','PastureSense collars fitted. Live rumination is now on each cow page.') } else log('📡','Passed on collars for now.') }
+  if(key.startsWith('sire:')){ const id=key.slice(5), c=S.cows.find(x=>x.id===id); c.sireChoice = pending[key] ?? 'maverick'; const ev=calfEV(c,BULLS[c.sireChoice]);
+    S.wallet -= ev.strawCost; S.dec.done['sirecost:'+id]=true;
+    if(c.sireChoice==='comet') S.badges.genNerd = S.badges.genNerd||S.day||1;
+    log('🧬', `${esc(c.name)} joined to <b>${BULLS[c.sireChoice].name}</b> (sexed). Expected straws ${ev.straws.toFixed(1)}, ${fmt$(ev.strawCost)} charged. Heifer odds ${Math.round(ev.heiferP*100)}%.`) }
+  S.queue = S.queue.filter(k=>k!==key); delete pending[key];
+  save(); renderAll(); toast('Decision locked in. P&L updated.');
+}
+
+/* ---------- badges & leaderboard ---------- */
+const BADGES = [
+  ['firstDrop','FD','First Milk Drop','Advance your first day'],
+  ['alpha5','α5','Beat the Herd ×5','5-day alpha streak'],
+  ['firstBid','BID','Paddle Up','Place your first bid'],
+  ['firstWin','WIN','Gavel Down','Win an auction'],
+  ['heifer','♀','It\'s a Heifer!','A heifer calf is born in your herd'],
+  ['genNerd','BPI','Genomics Nerd','Pick the genomic young sire'],
+  ['dataCow','IoT','Data Cow','Subscribe to collars'],
+  ['tenK','10k','10,000 L Club','Ship 10,000 L since day 1'],
+];
+function renderBadges(){
+  const L = S.hist.filter(h=>h.day>0).reduce((a,h)=>a+h.L,0); if(L>=10000) S.badges.tenK = S.badges.tenK||S.day;
+  $('#badges').innerHTML = BADGES.map(([k,ic,n,d])=>`<div class="badge ${S.badges[k]?'on':''}" title="${esc(d)}"><div class="b-ic">${ic}</div>${esc(n)}<br><small class="muted">${S.badges[k]?'day '+S.badges[k]:esc(d)}</small></div>`).join('');
+}
+function renderLeader(m){
+  const r = rng(hash('lb'+Math.floor(S.day/7)));
+  const rows = BOTS.slice(0,6).map(h=>({h, a: (r()-0.35)*0.22, mrm: 400+r()*2600}));
+  rows.push({h:'You', a:m.alpha7, mrm:m.MRM, me:true});
+  rows.sort((a,b)=>b.a-a.a);
+  $('#leader').innerHTML = `<tr><th>#</th><th>Investor</th><th class="r">Herd Alpha</th><th class="r">MRM</th></tr>` + rows.map((x,i)=>`<tr class="${x.me?'me':''}"><td class="num">${i+1}</td><td>${esc(x.h)}</td><td class="r num ${x.a>=0?'pos':'neg'}">${pct(x.a,1)}</td><td class="r num">${fmt$(x.mrm)}</td></tr>`).join('');
+}
+
+/* ============================================================
+   DAY ENGINE
+   ============================================================ */
+function log(ic,t){ S.events.push({day:S.day, ic, t}) }
+function advanceDay(silent){
+  S.day++; S.checkins++;
+  const r = rng(hash('day'+S.day));
+  const drop = {day:S.day, rows:[], events:[]};
+  let L=0, net=0, bench=0;
+  S.cows.forEach(c=>{
+    if(c.retired) return;
+    c.dim++;
+    if(c.dim===LACT+1 && c.owned){ const m=`${esc(c.name)} dried off after a ${LACT}-day lactation. 60-day rest before calving.`; log('🌙',m); drop.events.push(m) }
+    if(c.dim>CYCLE){
+      c.lact++; c.dim=1;
+      if(c.lact>MAXL){ c.retired=true; if(c.owned){ S.wallet+=1300; const m=`${esc(c.name)} retired after ${MAXL} lactations. Salvage ${fmt$(1300)} paid out.`; log('🏁',m); drop.events.push(m) } return }
+      if(c.owned){
+        const ev = calfEV(c, sireOf(c)); const heifer = r() < ev.heiferP; const value = heifer ? ev.hv : ev.bv;
+        c.calves.push({day:S.day, sex:heifer?'Heifer':'Bull', value:Math.round(value)}); S.wallet += value;
+        if(heifer) S.badges.heifer = S.badges.heifer||S.day;
+        const m = `${esc(c.name)} calved: a <b>${heifer?'heifer':'bull'} calf</b> (${fmt$(value)})${c.sireChoice?' by '+BULLS[c.sireChoice].name.split(' ')[1]:''}.`; log(heifer?'🎀':'🐂', m); drop.events.push(m);
+        c.sireChoice = null; delete S.dec.done['sirecost:'+c.id];
+      }
+    }
+    if(!c.owned) return;
+    if(c.dim===78 && !S.queue.includes('sire:'+c.id)) { S.queue.push('sire:'+c.id); drop.events.push(`${esc(c.name)} is cycling. Pick a sire in your Decisions.`) }
+    // health events
+    if(c.health>0) c.health--;
+    else if(c.dim<=LACT && r()<0.012){ c.health = S.dec.collar?1:3; const m = S.dec.collar ? `Collar flagged low rumination on ${esc(c.name)}. Treated early, 1 day off peak.` : `${esc(c.name)} has mild mastitis. Milk withheld 3 days.`; log('🩺',m); drop.events.push(m) }
+    const hf = c.health>0 ? (S.dec.collar?0.9:0.7) : 1;
+    const e = dayEcon(c,c.lact,c.dim,{noise:true, mods:true, healthFactor:hf});
+    const b = benchEcon(c,c.lact,c.dim);
+    let extra = 0;
+    if(c.elite && c.dim%45===10 && c.dim<=LACT){ extra = 6*(700+(c.bpi-300)*3)*0.5; const m=`IVF flush on ${esc(c.name)}: 6 grade-1 embryos, ${fmt$(extra)} net.`; log('🧫',m); drop.events.push(m) }
+    c.hist.push({day:S.day, lact:c.lact, L:e.L, net:e.net+extra});
+    L+=e.L; net+=e.net+extra; bench+=b.net;
+    drop.rows.push({c, L:e.L, net:e.net+extra, alpha: b.L>0?e.L/b.L-1:0});
+    // herd test
+    if(S.day%30===0){ c.fat = +(c.fat + (r()-0.45)*0.1).toFixed(2); c.prot = +(c.prot+(r()-0.45)*0.06).toFixed(2) }
+  });
+  if(S.day%30===0) log('🧪','Monthly herd test is in: fat and protein updated on every cow.');
+  S.wallet += net;
+  S.hist.push({day:S.day, L, net, bench});
+  if(net>=bench){ S.alphaStreak++; S.bestAlpha=Math.max(S.bestAlpha,S.alphaStreak) } else S.alphaStreak=0;
+  if(S.alphaStreak>=5) S.badges.alpha5 = S.badges.alpha5||S.day;
+  S.badges.firstDrop = S.badges.firstDrop||S.day;
+  if(S.day===1 && !S.dec.done.supp && !S.queue.includes('supp')) S.queue.push('supp');
+  if(S.day===2 && !S.dec.done.collar && !S.queue.includes('collar')) S.queue.push('collar');
+  // relist sold-out market so there's always something to bid on
+  drop.L=L; drop.net=net; drop.bench=bench;
+  save();
+  return drop;
+}
+function nextDay(n=1){
+  let agg=null;
+  for(let i=0;i<n;i++){ const d=advanceDay(); if(!agg){agg={...d, rows:d.rows.map(x=>({...x}))}} else { agg.L+=d.L; agg.net+=d.net; agg.bench+=d.bench; agg.events.push(...d.events); d.rows.forEach(x=>{const a=agg.rows.find(y=>y.c.id===x.c.id); if(a){a.L+=x.L;a.net+=x.net} else agg.rows.push({...x})}); agg.day=d.day } }
+  agg.n=n; showDrop(agg); renderAll();
+}
+function showDrop(d){
+  const m = $('#dropModal'); const dt = dateOf(d.day);
+  const alpha = d.bench>0 ? d.net/d.bench-1 : 0;
+  m.innerHTML = `<div class="m-card" role="dialog" aria-modal="true" aria-label="Milk Drop">
+    <div class="m-top" id="mTop">
+      <div class="lbl">Milk Drop · ${d.n>1?d.n+' days to ':''}${dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}</div>
+      <div class="big num" id="mBig">A$0.00</div>
+      <div>${fmtN(d.L,1)} L shipped · <b>${pct(alpha,1)}</b> vs herd-mates</div>
+      ${S.alphaStreak>1?`<div class="streak" style="display:inline-block;margin-top:8px;background:rgba(255,255,255,.16);padding:3px 10px;border-radius:99px;font-size:12px">${S.alphaStreak}-day streak beating the herd</div>`:''}
+    </div>
+    <div class="m-body">
+      ${d.rows.map(x=>`<div class="m-row"><div class="cowcell">${hideSVG(x.c)}<div><b>${esc(x.c.name)}</b><small>${fmtN(x.L,1)} L</small></div></div><div style="text-align:right"><b class="num">${fmt$(x.net,2)}</b><br><small class="${x.alpha>=0?'pos':'neg'}">${pct(x.alpha)} vs herd</small></div></div>`).join('')}
+      ${d.events.map(e=>`<div class="m-ev">${e}</div>`).join('')}
+      <button class="btn btn-primary" id="mClose">${S.queue.length?`Nice. ${S.queue.length} decision${S.queue.length>1?'s':''} waiting →`:'Back to my herd'}</button>
+    </div></div>`;
+  m.hidden = false;
+  const big = $('#mBig'), target = d.net, t0 = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches?0:900;
+  (function step(t){ const k = dur? Math.min(1,(t-t0)/dur):1; big.textContent = fmt$(target*(1-Math.pow(1-k,3)),2); if(k<1) requestAnimationFrame(step) })(t0);
+  if(dur){ const top=$('#mTop'); for(let i=0;i<10;i++){ const s=document.createElement('span'); s.className='drip'; s.style.left=(8+Math.random()*84)+'%'; s.style.animationDelay=(Math.random()*.7)+'s'; top.appendChild(s) } }
+  $('#mClose').focus();
+}
+
+/* ============================================================
+   AUCTION TICKER
+   ============================================================ */
+function tickCountdowns(){
+  const now = Date.now();
+  document.querySelectorAll('[data-ends]').forEach(el=>{
+    const ms = +el.dataset.ends - now;
+    if(ms<=0){ el.textContent='Closing…'; return }
+    const s=Math.floor(ms/1000), h=Math.floor(s/3600), mi=Math.floor(s%3600/60), se=s%60;
+    el.textContent = h? `${h}h ${String(mi).padStart(2,'0')}m` : `${mi}:${String(se).padStart(2,'0')}`;
+    el.classList.toggle('hot', ms<5*60000);
+  });
+}
+function auctionTick(){
+  const now = Date.now(); let changed=false;
+  for(const [id,au] of Object.entries(S.auctions)){
+    if(au.status!=='live') continue;
+    if(now >= au.endsAt){
+      const c = S.cows.find(x=>x.id===id);
+      if(au.leader==='you'){
+        if(S.wallet >= au.cur){ au.status='won'; c.owned=true; c.paid=au.cur; c.boughtDay=S.day; S.wallet-=au.cur; S.badges.firstWin=S.badges.firstWin||S.day||1;
+          log('🔨', `You won <b>${esc(c.name)}</b> for ${fmt$(au.cur)}. She starts earning for you tomorrow.`); toast(`Gavel down! ${c.name} is yours.`) }
+        else { au.status='lost'; toast(`Auction for ${c.name} voided: not enough in your wallet.`) }
+      } else { au.status='lost'; }
+      changed=true; continue;
+    }
+    // bots
+    const left = au.endsAt-now;
+    const chance = left<60000 ? 0.18 : 0.025;
+    if(Math.random()<chance){
+      const nxt = au.cur + minInc(au.cur);
+      if(nxt <= au.ceil){
+        const wasYou = au.leader==='you';
+        let who; do{ who = BOTS[Math.floor(Math.random()*BOTS.length)] }while(who===au.leader);
+        au.cur = nxt; au.leader = who; au.bids.push({who, amt:nxt, day:S.day});
+        if(left<60000) au.endsAt = now+60000;
+        if(wasYou){ const c=S.cows.find(x=>x.id===id); toast(`Outbid on ${c.name}: ${who} bid ${fmt$(nxt)}.`) }
+        changed=true;
+      }
+    }
+  }
+  if(changed){ save(); if(current==='market') renderMarket(); if(openId && S.auctions[openId]) renderCow(); if(current==='herd') renderHerd() }
+  else tickCountdowns();
+}
+
+/* ============================================================
+   P&L LAB
+   ============================================================ */
+let plScope = 'herd';
+const SLIDERS = [
+  ['price','Milk price','A$/kg MS',7.5,11,0.05,v=>'A$'+v.toFixed(2),'Farmgate price per kg of milk solids (fat + protein). Southern opening prices have ranged ~A$8.60–9.50.'],
+  ['feed','Feed cost','% of milk revenue',20,65,1,v=>v+'%','Purchased grain, fodder, and pasture costs.'],
+  ['labour','Labour','% of milk revenue',5,30,1,v=>v+'%','Wages plus imputed owner-operator labour.'],
+  ['vet','Vet, AI & herd testing','% of milk revenue',2,12,0.5,v=>v+'%','Animal health, breeding and monthly herd test.'],
+  ['util','Utilities','% of milk revenue',1,12,0.5,v=>v+'%','Power for the shed and vat, water, and gas.'],
+  ['other','Other','% of milk revenue',2,20,0.5,v=>v+'%','Repairs, insurance, admin and depreciation.'],
+  ['mgmt','Management fee','% of gross',0,10,0.5,v=>v+'%','Platform and farm-manager fee, charged on all milk revenue.'],
+  ['cull','Cull rate','% per year',10,35,1,v=>v+'%','Annual chance of early exit. Australian herds typically run around 18–25%.'],
+  ['disc','Discount rate','% per year',4,16,0.5,v=>v+'%','Your required return, used to discount LTV-L.'],
+];
+function renderLab(){
+  const P = S.params;
+  $('#presets').innerHTML = Object.entries(PRESETS).map(([k,p])=>`<button class="chip" data-preset="${k}" aria-pressed="${P.preset===k}">${p.label}</button>`).join('');
+  if(!$('#sliders').children.length){
+    $('#sliders').innerHTML = SLIDERS.map(([k,l,u,min,max,st,f,help])=>`<div class="sl"><label for="s-${k}">${l} <span class="muted" style="font-weight:400">· ${u}</span></label><output id="o-${k}"></output><input type="range" id="s-${k}" min="${min}" max="${max}" step="${st}" data-k="${k}"><small>${help}</small></div>`).join('');
+  }
+  SLIDERS.forEach(([k,,,,,,f])=>{ $('#s-'+k).value = P[k]; $('#o-'+k).textContent = f(+P[k]) });
+  const os = owned();
+  const opts = [['herd','My herd (all cows)'], ...os.map(c=>[c.id,c.name]), ...S.cows.filter(c=>!c.owned&&S.auctions[c.id]?.status==='live').map(c=>[c.id,c.name+' (market)'])];
+  if(!opts.find(o=>o[0]===plScope)) plScope='herd';
+  $('#plScope').innerHTML = opts.map(([v,l])=>`<option value="${v}" ${v===plScope?'selected':''}>${esc(l)}</option>`).join('');
+  renderPL();
+}
+function renderPL(){
+  const P = S.params;
+  const cows = plScope==='herd' ? owned() : [S.cows.find(c=>c.id===plScope)];
+  const sum = {L:0, milk:0, calves:0, embryo:0, base:{feed:0,labour:0,vet:0,util:0,other:0,dry:0}, feedTop:0, supp:0, collar:0, semen:0, mgmt:0};
+  cows.forEach(c=>{ const r=project(c,365,true); sum.L+=r.L; sum.milk+=r.milk; sum.calves+=r.calves; sum.embryo+=r.embryo; sum.feedTop+=r.feedTop; sum.supp+=r.supp; sum.collar+=r.collar; sum.semen+=r.semen; sum.mgmt+=r.mgmt; for(const k in r.base) sum.base[k]+=r.base[k] });
+  const rev = sum.milk + sum.calves + sum.embryo;
+  const op = Object.values(sum.base).reduce((a,b)=>a+b,0);
+  const decs = sum.feedTop+sum.supp+sum.collar+sum.semen;
+  const net = rev - op - decs - sum.mgmt;
+  const price = cows.reduce((a,c)=>a+(c.owned?c.paid:S.auctions[c.id].cur),0);
+  const cpl = (op+decs+sum.mgmt)/sum.L*100;
+  const be = P.price * (op+decs+sum.mgmt - sum.calves - sum.embryo)/sum.milk;
+  const lt = cows.reduce((a,c)=>a+ltv(c,true).total,0);
+  $('#plTitle').textContent = plScope==='herd' ? 'Next 12 months · my herd' : 'Next 12 months · '+cows[0].name;
+  $('#plOuts').innerHTML = `
+    <div class="tile"><span>Net profit</span><b class="${net>=0?'pos':'neg'}">${fmt$(net)}</b><small>${(net/rev*100).toFixed(1)}% margin</small></div>
+    <div class="tile"><span>Yield on price</span><b>${(net/price*100).toFixed(1)}%</b><small>on ${fmt$(price)}</small></div>
+    <div class="tile"><span>Cost of production</span><b>${cpl.toFixed(1)}¢/L</b><small>${fmtN(sum.L)} L</small></div>
+    <div class="tile"><span>Breakeven price</span><b>A$${be.toFixed(2)}</b><small>per kg MS, costs held in A$</small></div>`;
+  const rows = [
+    {label:'Milk revenue', v:sum.milk, kind:'rev'},
+    ...(sum.calves?[{label:'Calves', v:sum.calves, kind:'rev'}]:[]),
+    ...(sum.embryo?[{label:'IVF embryos', v:sum.embryo, kind:'rev'}]:[]),
+    ...COSTS.map(([k,l])=>({label:l.split(' (')[0], v:sum.base[k], kind:'cost', share:sum.base[k]/sum.milk})),
+    ...(sum.base.dry?[{label:'Dry-cow upkeep', v:sum.base.dry, kind:'cost', share:sum.base.dry/sum.milk}]:[]),
+    ...(decs?[{label:'Your decisions', v:decs, kind:'cost', share:decs/sum.milk}]:[]),
+    {label:'Management fee', v:sum.mgmt, kind:'cost', share:sum.mgmt/sum.milk},
+    {label:'Net to investor', v:net, kind:'net'},
+  ];
+  wfChart($('#wfChart'), rows);
+  const line = (l,v,cls='') => `<tr class="${cls}"><td>${l}</td><td class="r num">${fmt$(v)}</td><td class="r num">${(v/sum.milk*100).toFixed(1)}%</td><td class="r num">${(v/sum.L*100).toFixed(1)}¢</td></tr>`;
+  $('#plTbl').innerHTML = `<tr><th>Line</th><th class="r">A$ / yr</th><th class="r">% milk rev.</th><th class="r">per litre</th></tr>
+    ${line('Milk revenue', sum.milk)}${sum.calves?line('Calf sales / progeny', sum.calves):''}${sum.embryo?line('IVF embryo sales (net)', sum.embryo):''}
+    ${line('Total revenue', rev, 'sub')}
+    ${COSTS.map(([k,l])=>line(l, -sum.base[k], 'minus')).join('')}
+    ${sum.base.dry?line('Dry-cow upkeep (A$'+S.params.dryCost.toFixed(2)+'/day)', -sum.base.dry, 'minus'):''}
+    ${sum.feedTop?line('Grain top-up ('+FEED[S.dec.feed].k+')', -sum.feedTop, 'minus'):''}
+    ${sum.supp?line('RumenPro supplement', -sum.supp, 'minus'):''}
+    ${sum.collar?line('PastureSense collars', -sum.collar, 'minus'):''}
+    ${sum.semen?line('Sexed semen', -sum.semen, 'minus'):''}
+    ${line('Management fee', -sum.mgmt, 'minus')}
+    ${line('Net to investor', net, 'net')}
+    <tr><td class="muted">LTV-L at these settings</td><td class="r num">${fmt$(lt)}</td><td colspan="2" class="r muted">${(lt/price).toFixed(2)}× price</td></tr>`;
+}
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+let current = 'market';
+function show(v){ current=v; document.querySelectorAll('.view').forEach(s=>s.hidden = s.id!=='v-'+v); document.querySelectorAll('.nav button').forEach(b=>b.setAttribute('aria-current', b.dataset.view===v?'page':'false')); renderAll(); try{ history.replaceState(null,'','#'+v) }catch(e){} window.scrollTo({top:0}) }
+function renderHeader(){ const d=dateOf(S.day); $('#dateLbl').textContent = d.toLocaleDateString('en-AU',{weekday:'short', day:'numeric', month:'short', year:'numeric'}); $('#seasonLbl').textContent = `Day ${S.day} · ${season(d)}`; $('#walletLbl').textContent = fmt$(S.wallet); const q=S.queue.length, dot=$('#decDot'); dot.hidden=!q; dot.textContent=q }
+function renderAll(){ renderHeader(); if(current==='market') renderMarket(); if(current==='herd') renderHerd(); if(current==='lab') renderLab(); if(openId) renderCow() }
+function toast(t){ const el=document.createElement('div'); el.className='toast'; el.textContent=t; $('#toasts').appendChild(el); setTimeout(()=>el.remove(), 3600) }
+function save(){ try{ localStorage.setItem('herdroyalty-v1', JSON.stringify(S)) }catch(e){} }
+function load(){ try{ const s=JSON.parse(localStorage.getItem('herdroyalty-v1')); if(s && s.v===1) return s }catch(e){} return null }
+
+S = load() || freshState();
+if(!load()) save();
+
+document.addEventListener('click', e=>{
+  const t = e.target.closest('button, tr[data-cow]'); if(!t) return;
+  if(t.dataset.view) return show(t.dataset.view);
+  if(t.dataset.cow) return openCow(t.dataset.cow);
+  if(t.dataset.breed){ mktBreed=t.dataset.breed; return renderMarket() }
+  if(t.dataset.help) return toast(t.dataset.help);
+  if(t.dataset.dec){ const k=t.dataset.dec, v=t.dataset.v; pending[k] = k==='feed' ? +v : (k==='supp'||k==='collar') ? v==='1' : v; return renderDecisions() }
+  if(t.dataset.confirm) return confirmDecision(t.dataset.confirm);
+  if(t.dataset.preset){ Object.assign(S.params, PRESETS[t.dataset.preset], {preset:t.dataset.preset}); save(); return renderAll() }
+  if(t.id==='revisit'){ ['feed','supp','collar'].forEach(k=>{ if(S.dec.done[k] && !S.queue.includes(k)) S.queue.unshift(k) }); return renderDecisions() }
+  if(t.id==='closeD') return closeCow();
+  if(t.id==='quickBid'){ const au=S.auctions[openId]; return placeBid(openId, au.cur+minInc(au.cur)) }
+  if(t.id==='mClose'){ $('#dropModal').hidden=true; if(S.queue.length && current!=='herd') show('herd'); return }
+  if(t.id==='nextDay') return nextDay(1);
+  if(t.id==='ff7') return nextDay(7);
+  if(t.id==='resetBtn'){ $('#resetConfirm').hidden=false; return }
+  if(t.id==='resetNo'){ $('#resetConfirm').hidden=true; return }
+  if(t.id==='resetYes'){ try{localStorage.removeItem('herdroyalty-v1')}catch(e){} S=freshState(); save(); pending={}; $('#resetConfirm').hidden=true; closeCow(); show('market'); toast('Demo reset. Fresh auctions are live.'); return }
+});
+document.addEventListener('submit', e=>{ if(e.target.id==='bidForm'){ e.preventDefault(); placeBid(openId, +$('#bidAmt').value.replace(/[^0-9.]/g,'')) } });
+document.addEventListener('change', e=>{ if(e.target.id==='mktSort'){ mktSort=e.target.value; renderMarket() } if(e.target.id==='plScope'){ plScope=e.target.value; renderPL() } });
+document.addEventListener('input', e=>{ const k=e.target.dataset?.k; if(!k) return; S.params[k]=+e.target.value; S.params.preset=null; const sl=SLIDERS.find(s=>s[0]===k); $('#o-'+k).textContent=sl[6](+e.target.value); document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed','false')); save(); renderPL() });
+$('#scrim').addEventListener('click', closeCow);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(!$('#dropModal').hidden) $('#dropModal').hidden=true; else closeCow() } });
+
+const startView = ['market','herd','lab'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'market';
+show(startView);
+setInterval(auctionTick, 1000);
+</script>
+</body></html>
